@@ -1,0 +1,386 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GraduationCap, ArrowLeft, Search, Filter, Award, Users, BookOpen, DollarSign, CheckCircle } from 'lucide-react';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+function Scholarships({ user, onLogout }) {
+  const navigate = useNavigate();
+  const [scholarships, setScholarships] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    education: '',
+    community: '',
+    gender: '',
+    income: ''
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [stats, setStats] = useState({
+    communities: [],
+    education_levels: []
+  });
+
+  useEffect(() => {
+    fetchStats();
+    fetchScholarships();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API}/scholarships/stats`);
+      if (response.data.success) {
+        setStats(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+    }
+  };
+
+  const fetchScholarships = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      
+      if (filters.education) params.append('education', filters.education);
+      if (filters.community) params.append('community', filters.community);
+      if (filters.gender) params.append('gender', filters.gender);
+      if (filters.income) params.append('income', filters.income);
+      if (searchQuery) params.append('search', searchQuery);
+
+      const response = await axios.get(`${API}/scholarships?${params.toString()}`);
+      
+      if (response.data.success) {
+        setScholarships(response.data.scholarships);
+      }
+    } catch (err) {
+      console.error('Failed to fetch scholarships:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    fetchScholarships();
+  };
+
+  const handleReset = () => {
+    setFilters({
+      education: '',
+      community: '',
+      gender: '',
+      income: ''
+    });
+    setSearchQuery('');
+    setTimeout(() => fetchScholarships(), 100);
+  };
+
+  const checkEligibility = (scholarship) => {
+    const profile = user?.profile || {};
+    let eligible = true;
+    const reasons = [];
+
+    const educationMatch = profile.education_level ? scholarship.education_qualifications.includes(profile.education_level) : true;
+    const communityMatch = profile.community ? scholarship.communities.includes(profile.community) : true;
+    const genderMatch = profile.gender ? scholarship.genders.includes(profile.gender) : true;
+    const incomeMatch = profile.annual_income ? scholarship.income_ranges.includes(profile.annual_income) : true;
+
+    if (!educationMatch) reasons.push('Education level');
+    if (!communityMatch) reasons.push('Community');
+    if (!genderMatch) reasons.push('Gender');
+    if (!incomeMatch) reasons.push('Income');
+
+    eligible = reasons.length === 0;
+    return { eligible, reasons };
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b" data-testid="scholarships-header">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" onClick={() => navigate('/dashboard')} data-testid="back-to-dashboard-button">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="bg-blue-600 p-2 rounded-lg">
+                <Award className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900" data-testid="scholarships-title">Available Scholarships</h1>
+                <p className="text-sm text-gray-500" data-testid="scholarships-subtitle">
+                  {scholarships.length} scholarships found
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filter Section */}
+        <Card className="mb-8" data-testid="search-filter-card">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center">
+                <Search className="h-5 w-5 mr-2 text-blue-600" />
+                Search & Filter
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                data-testid="toggle-filters-button"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {showFilters ? 'Hide' : 'Show'} Filters
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Search Bar */}
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Search scholarships by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="flex-1"
+                data-testid="search-input"
+              />
+              <Button onClick={handleSearch} data-testid="search-button">
+                <Search className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t" data-testid="filters-section">
+                <div className="space-y-2">
+                  <Label data-testid="education-filter-label">Education Level</Label>
+                  <Select value={filters.education} onValueChange={(v) => setFilters({ ...filters, education: v })}>
+                    <SelectTrigger data-testid="education-filter-select">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="Undergraduate">Undergraduate</SelectItem>
+                      <SelectItem value="Postgraduate">Postgraduate</SelectItem>
+                      <SelectItem value="Doctrate">Doctorate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label data-testid="community-filter-label">Community</Label>
+                  <Select value={filters.community} onValueChange={(v) => setFilters({ ...filters, community: v })}>
+                    <SelectTrigger data-testid="community-filter-select">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="General">General</SelectItem>
+                      <SelectItem value="OBC">OBC</SelectItem>
+                      <SelectItem value="SC/ST">SC/ST</SelectItem>
+                      <SelectItem value="Minority">Minority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label data-testid="gender-filter-label">Gender</Label>
+                  <Select value={filters.gender} onValueChange={(v) => setFilters({ ...filters, gender: v })}>
+                    <SelectTrigger data-testid="gender-filter-select">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label data-testid="income-filter-label">Annual Income</Label>
+                  <Select value={filters.income} onValueChange={(v) => setFilters({ ...filters, income: v })}>
+                    <SelectTrigger data-testid="income-filter-select">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="Upto 1.5L">Up to 1.5L</SelectItem>
+                      <SelectItem value="1.5L to 3L">1.5L to 3L</SelectItem>
+                      <SelectItem value="3L to 6L">3L to 6L</SelectItem>
+                      <SelectItem value="Above 6L">Above 6L</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="md:col-span-2 lg:col-span-4 flex space-x-2">
+                  <Button onClick={handleSearch} className="flex-1" data-testid="apply-filters-button">
+                    Apply Filters
+                  </Button>
+                  <Button onClick={handleReset} variant="outline" className="flex-1" data-testid="reset-filters-button">
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Scholarships List */}
+        {loading ? (
+          <div className="text-center py-12" data-testid="loading-message">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading scholarships...</p>
+          </div>
+        ) : scholarships.length === 0 ? (
+          <Card data-testid="no-scholarships-card">
+            <CardContent className="text-center py-12">
+              <Award className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Scholarships Found</h3>
+              <p className="text-gray-600 mb-4">Try adjusting your filters or search query</p>
+              <Button onClick={handleReset} data-testid="reset-search-button">Reset Search</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {scholarships.map((scholarship, index) => {
+              const { eligible, reasons } = checkEligibility(scholarship);
+              
+              return (
+                <Card 
+                  key={index} 
+                  className={`hover:shadow-lg transition-shadow ${eligible ? 'border-green-200' : ''}`}
+                  data-testid={`scholarship-card-${index}`}
+                >
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg pr-4" data-testid={`scholarship-name-${index}`}>
+                        {scholarship.name}
+                      </CardTitle>
+                      {eligible ? (
+                        <Badge className="bg-green-500 shrink-0" data-testid={`eligible-badge-${index}`}>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Eligible
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="shrink-0" data-testid={`not-eligible-badge-${index}`}>
+                          Not Eligible
+                        </Badge>
+                      )}
+                    </div>
+                    <CardDescription data-testid={`scholarship-description-${index}`}>
+                      {scholarship.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Eligibility Criteria */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-sm text-gray-900">Eligibility Criteria:</h4>
+                      
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div data-testid={`education-criteria-${index}`}>
+                          <p className="text-gray-600 flex items-center">
+                            <BookOpen className="h-4 w-4 mr-2 text-blue-500" />
+                            Education
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {scholarship.education_qualifications.map((edu, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {edu}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div data-testid={`community-criteria-${index}`}>
+                          <p className="text-gray-600 flex items-center">
+                            <Users className="h-4 w-4 mr-2 text-purple-500" />
+                            Community
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {scholarship.communities.map((comm, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {comm}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div data-testid={`income-criteria-${index}`}>
+                          <p className="text-gray-600 flex items-center">
+                            <DollarSign className="h-4 w-4 mr-2 text-green-500" />
+                            Income Range
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {scholarship.income_ranges.map((income, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {income}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div data-testid={`gender-criteria-${index}`}>
+                          <p className="text-gray-600 flex items-center">
+                            <Users className="h-4 w-4 mr-2 text-pink-500" />
+                            Gender
+                          </p>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {scholarship.genders.map((gender, i) => (
+                              <Badge key={i} variant="outline" className="text-xs">
+                                {gender}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Info */}
+                    <div className="pt-3 border-t space-y-2">
+                      <p className="text-sm">
+                        <span className="font-semibold">Benefits:</span> {scholarship.benefits}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-semibold">Application:</span> {scholarship.application_process}
+                      </p>
+                    </div>
+
+                    {!eligible && reasons.length > 0 && (
+                      <Alert className="bg-orange-50 border-orange-200" data-testid={`ineligible-alert-${index}`}>
+                        <AlertDescription className="text-orange-800 text-sm">
+                          Not eligible due to: {reasons.join(', ')}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button className="w-full" disabled={!eligible} data-testid={`apply-button-${index}`}>
+                      {eligible ? 'Apply Now' : 'Not Eligible'}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default Scholarships;
