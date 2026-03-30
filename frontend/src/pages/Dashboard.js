@@ -48,21 +48,28 @@ function Dashboard({ user, onLogout }) {
   const verifiedDocs = documents.filter(d => d.is_verified).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Tricolor Accent Bar */}
+      <div className="h-2 w-full flex fixed top-0 z-50">
+        <div className="flex-1 bg-orange-500"></div>
+        <div className="flex-1 bg-white"></div>
+        <div className="flex-1 bg-green-600"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white/10 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-white border-b border-slate-200 mt-2 sticky top-2 z-40 shadow-sm relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 relative z-10">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg">
+              <div className="bg-blue-600 p-2.5 rounded-xl shadow-md">
                 <GraduationCap className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">{t('scholarship_portal', lang)}</h1>
-                <p className="text-sm text-blue-300">{t('welcome', lang)}, {user?.full_name}!</p>
+                <h1 className="text-xl font-bold text-slate-800 tracking-tight">{t('scholarship_portal', lang)}</h1>
+                <p className="text-sm font-medium text-slate-500">{t('welcome', lang)}, <span className="text-blue-600 font-bold">{user?.full_name}</span>!</p>
               </div>
             </div>
-            <button onClick={handleLogout} className="text-blue-300 hover:text-white flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+            <button onClick={handleLogout} className="text-slate-600 font-bold hover:bg-slate-100 flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border border-slate-200 shadow-sm">
               <LogOut className="h-4 w-4" />{t('logout', lang)}
             </button>
           </div>
@@ -74,78 +81,84 @@ function Dashboard({ user, onLogout }) {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
           {[
-            { label: t('total_scholarships', lang), value: stats.total_scholarships, icon: Award, color: 'from-blue-500 to-cyan-500' },
-            { label: t('applied', lang), value: applications.length, icon: Briefcase, color: 'from-indigo-500 to-purple-500' },
-            { label: t('verified_docs', lang), value: `${verifiedDocs}/${documents.length}`, icon: FileText, color: 'from-green-500 to-emerald-500' },
-            { label: t('pending', lang), value: documents.filter(d => d.verification_status === 'pending').length, icon: FileText, color: 'from-yellow-500 to-orange-500' },
+            { label: t('total_scholarships', lang), value: stats.total_scholarships, icon: Award, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+            { label: t('applied', lang), value: applications.length, icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+            { label: t('verified_docs', lang), value: `${verifiedDocs}/${documents.length}`, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+            { label: t('pending', lang), value: documents.filter(d => d.verification_status === 'pending').length, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
           ].map((stat, i) => (
-            <div key={i} className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5">
-              <div className="flex justify-between items-start mb-3">
-                <span className="text-sm text-blue-200">{stat.label}</span>
-                <div className={`bg-gradient-to-br ${stat.color} p-2 rounded-lg`}>
-                  <stat.icon className="h-4 w-4 text-white" />
+            <div key={i} className={`bg-white border border-slate-200 rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-slate-300 transition-colors`}>
+              <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-50 ${stat.bg} pointer-events-none transition-transform group-hover:scale-110`}></div>
+              <div className="flex justify-between items-start mb-3 relative z-10">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</span>
+                <div className={`${stat.bg} p-2 rounded-lg`}>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white">{stat.value}</div>
+              <div className="text-4xl font-black text-slate-800 tracking-tighter relative z-10">{stat.value}</div>
             </div>
           ))}
         </div>
 
         {/* Quick Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[
-            { title: t('browse_scholarships', lang), desc: 'Explore 55+ scholarships', icon: BookOpen, color: 'from-blue-500 to-cyan-500', path: '/scholarships' },
-            { title: t('explore_benefits', lang), desc: '25+ student offers & tools', icon: Award, color: 'from-indigo-500 to-purple-500', path: '/benefits' },
-            { title: t('upload_documents', lang), desc: 'Upload & verify docs via OCR', icon: FileText, color: 'from-green-500 to-emerald-500', path: '/documents' },
-            { title: t('view_profile', lang), desc: 'Track applications & eligibility', icon: User, color: 'from-orange-500 to-red-500', path: '/profile' },
-          ].map((item, i) => (
-            <button key={i} onClick={() => navigate(item.path)}
-              className="group bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-left
-                         hover:bg-white/20 hover:border-blue-400/50 transition-all duration-300">
-              <div className={`bg-gradient-to-br ${item.color} p-3 rounded-xl w-fit mb-4 group-hover:scale-110 transition-transform`}>
-                <item.icon className="h-6 w-6 text-white" />
+            { title: t('browse_scholarships', lang), desc: t('explore_scholarships_desc', lang), icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100', hover: 'hover:border-blue-300 hover:shadow-blue-500/10', path: '/scholarships' },
+            { title: t('explore_benefits', lang), desc: t('student_offers_desc', lang), icon: Award, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100', hover: 'hover:border-indigo-300 hover:shadow-indigo-500/10', path: '/benefits' },
+            { title: t('upload_documents', lang), desc: t('upload_verify_desc', lang), icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', hover: 'hover:border-emerald-300 hover:shadow-emerald-500/10', path: '/documents' },
+            { title: t('view_profile', lang), desc: t('track_eligibility_desc', lang), icon: User, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', hover: 'hover:border-amber-300 hover:shadow-amber-500/10', path: '/profile' },
+          ].map((action, i) => (
+            <div key={i} onClick={() => navigate(action.path)}
+              className={`bg-white border text-left rounded-2xl p-6 shadow-sm cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${action.hover} border-slate-200`}>
+              <div className={`${action.bg} p-3 rounded-xl w-fit mb-4`}>
+                <action.icon className={`h-6 w-6 ${action.color}`} />
               </div>
-              <h3 className="text-white font-semibold mb-1">{item.title}</h3>
-              <p className="text-blue-300 text-sm">{item.desc}</p>
-            </button>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{action.title}</h3>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed">{action.desc}</p>
+            </div>
           ))}
         </div>
 
-        {/* Recent Applications */}
-        {applications.length > 0 && (
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 mb-8">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-blue-400" /> Recent Applications
+        {/* Eligibility & Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
+              <BookOpen className="h-5 w-5 text-emerald-500" /> {t('eligibility', lang)}
             </h3>
-            <div className="space-y-3">
-              {applications.slice(0, 5).map((app) => (
-                <div key={app.id} className="bg-white/5 rounded-xl p-4 flex justify-between items-center">
-                  <div>
-                    <div className="text-white font-medium">{app.scholarship_name}</div>
-                    <div className="text-blue-300 text-sm">{app.provider} • {app.amount}</div>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-300">
-                    {app.status}
-                  </span>
-                </div>
-              ))}
+            <p className="text-slate-600 mb-6 font-medium leading-relaxed max-w-md relative z-10">
+              Complete your profile and upload verified documents to unlock more scholarship opportunities instantly.
+            </p>
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className={`h-2.5 w-2.5 rounded-full mr-3 ${documents.length > 0 ? "bg-emerald-500" : "bg-red-500"}`}></span>
+                <span className="font-bold text-sm">Target Documents Uploaded</span>
+              </div>
+              <div className="flex items-center text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className={`h-2.5 w-2.5 rounded-full mr-3 ${verifiedDocs > 0 ? "bg-emerald-500" : "bg-red-500"}`}></span>
+                <span className="font-bold text-sm">Identity Verified by DigiLocker</span>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Complete Profile Prompt */}
-        {documents.length === 0 && (
-          <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-6">
-            <h3 className="text-white font-semibold flex items-center gap-2 mb-2">
-              <User className="h-5 w-5" /> {t('complete_profile', lang)}
-            </h3>
-            <p className="text-blue-200 text-sm mb-4">Upload your documents to get personalized scholarship recommendations.</p>
-            <button onClick={() => navigate('/documents')}
-              className="px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-indigo-700">
-              {t('upload_documents', lang)}
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 shadow-md text-white relative overflow-hidden">
+            <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-black/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <h3 className="text-2xl font-extrabold mb-3 tracking-tight relative z-10">Need Assistance?</h3>
+            <p className="text-blue-100 font-medium mb-6 relative z-10 leading-relaxed">
+              Our AI Assistant is available 24/7 to help you find the right scholarships and guide you through the application process.
+            </p>
+            <button className="bg-white text-blue-700 px-6 py-3 rounded-xl text-sm font-bold shadow-sm hover:scale-105 transition-transform uppercase tracking-widest relative z-10">
+              Open Chat Support
             </button>
           </div>
-        )}
+        </div>
+
+        <div className="mt-8 text-center border-t border-slate-200 pt-6">
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+                A Government of India Initiative Simulator • Secure & Verified
+            </p>
+        </div>
       </main>
     </div>
   );

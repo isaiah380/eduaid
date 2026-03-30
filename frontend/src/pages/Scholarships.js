@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { t } from "@/lib/i18n";
+import { translateScholarshipName, translateDescription } from "@/lib/scholarshipTranslations";
 import { ArrowLeft, Search, ExternalLink, Award, CheckCircle, XCircle } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
@@ -74,139 +75,185 @@ function Scholarships({ user, onLogout }) {
   const isExpired = (deadline) => deadline && new Date() > new Date(deadline);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-slate-50 font-sans pb-12">
+      {/* Tricolor Accent Bar */}
+      <div className="h-2 w-full flex fixed top-0 z-50">
+        <div className="flex-1 bg-orange-500"></div>
+        <div className="flex-1 bg-white"></div>
+        <div className="flex-1 bg-green-600"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white/10 backdrop-blur-lg border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <header className="bg-white border-b border-slate-200 mt-2 sticky top-2 z-40 shadow-sm relative">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center relative z-10">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/dashboard")} className="text-blue-300 hover:text-white"><ArrowLeft className="h-5 w-5" /></button>
-            <Award className="h-6 w-6 text-blue-400" />
-            <h1 className="text-xl font-bold text-white">{t("scholarships", lang)} ({filtered.length})</h1>
+            <button onClick={() => navigate("/dashboard")} className="text-slate-500 hover:text-blue-600 mr-2 font-medium transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="bg-blue-600 p-2.5 rounded-xl shadow-md">
+               <Award className="h-5 w-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">{t("scholarships", lang)} <span className="text-slate-400 font-medium ml-1 text-base">({filtered.length})</span></h1>
           </div>
-          <button onClick={() => { onLogout(); navigate("/"); }} className="text-blue-300 hover:text-white px-3 py-2 bg-white/10 rounded-lg text-sm">Logout</button>
+          <button onClick={() => { onLogout(); navigate("/"); }} className="text-slate-600 font-bold hover:bg-slate-100 flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border border-slate-200 shadow-sm">
+             {t('logout', lang)}
+          </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Filters */}
-        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 mb-6">
-          <div className="flex gap-3 mb-3">
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Filters Panel */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-8 shadow-sm">
+          <div className="flex gap-4 mb-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-blue-300" />
-              <input type="text" placeholder="Search scholarships..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-blue-300/50 focus:outline-none focus:border-blue-400" />
+              <Search className="absolute left-4 top-3 h-5 w-5 text-slate-400" />
+              <input type="text" placeholder={t('search_scholarships', lang)} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow" />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[
-              { value: eduFilter, setValue: setEduFilter, options: [["", "All Education"], ["Undergraduate", "Undergraduate"], ["Postgraduate", "Postgraduate"], ["Doctorate", "Doctorate"]] },
-              { value: commFilter, setValue: setCommFilter, options: [["", "All Communities"], ["General", "General"], ["OBC", "OBC"], ["SC/ST", "SC/ST"], ["Minority", "Minority"]] },
-              { value: typeFilter, setValue: setTypeFilter, options: [["", "All Types"], ["MERIT", "Merit-Based"], ["NEED", "Need-Based"], ["MINORITY", "Minority"], ["GIRL_CHILD", "Girl Child"]] },
-            ].map((filter, i) => (
-              <select key={i} value={filter.value} onChange={(e) => filter.setValue(e.target.value)}
-                className="px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-blue-400">
-                {filter.options.map(([val, label]) => <option key={val} value={val} className="bg-slate-800">{label}</option>)}
-              </select>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select value={eduFilter} onChange={(e) => setEduFilter(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:outline-none focus:border-blue-500">
+              <option value="">{t('all_education', lang)}</option>
+              <option value="10th">10th Pass</option><option value="12th">12th Pass</option><option value="UG">Undergraduate</option><option value="PG">Postgraduate</option>
+            </select>
+            <select value={commFilter} onChange={(e) => setCommFilter(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:outline-none focus:border-blue-500">
+              <option value="">{t('all_communities', lang)}</option>
+              <option value="SC">SC</option><option value="ST">ST</option><option value="OBC">OBC</option><option value="General">General</option>
+            </select>
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:outline-none focus:border-blue-500">
+              <option value="">{t('all_types', lang)}</option>
+              <option value="MERIT">Merit Based</option><option value="MEANS">Means Based</option><option value="SPORTS">Sports</option><option value="GIRLS">Girls Only</option>
+            </select>
           </div>
         </div>
 
-        {/* Scholarship Grid */}
         {loading ? (
-          <div className="text-center text-blue-300 py-20">{t("loading", lang)}</div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center text-blue-300 py-20">{t("no_results", lang)}</div>
+          <div className="flex justify-center items-center py-20">
+            <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filtered.map((s) => (
-              <div key={s._id || s.id} className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 hover:bg-white/15 transition-colors">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-white font-bold text-base leading-tight flex-1 mr-3">{s.name}</h3>
-                  {s.amount && <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded-full whitespace-nowrap">{s.amount}</span>}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((s) => {
+              const applied = appliedIds.has(s._id || s.id);
+              const expired = isExpired(s.deadline);
+              const nameTranslated = translateScholarshipName(s.name, lang);
+              const descTranslated = translateDescription(s.description, lang);
+
+              return (
+                <div key={s._id || s.id} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
+                  <div className="mb-4 flex-1">
+                    <div className="flex justify-between items-start mb-3">
+                      <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-md border
+                        ${s.type === 'MERIT' ? 'bg-indigo-50 text-indigo-700 border-indigo-100' :
+                          s.type === 'MEANS' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                          'bg-blue-50 text-blue-700 border-blue-100'}`}>
+                        {s.type}
+                      </span>
+                      {applied ? (
+                        <span className="flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-1 rounded-md font-black uppercase tracking-widest border border-emerald-200"><CheckCircle className="h-3 w-3"/> Applied</span>
+                      ) : expired ? (
+                        <span className="flex items-center gap-1 text-[10px] bg-red-50 text-red-700 px-2 py-1 rounded-md font-black uppercase tracking-widest border border-red-200"><XCircle className="h-3 w-3"/> Expired</span>
+                      ) : null}
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight group-hover:text-blue-600 transition-colors">{nameTranslated}</h3>
+                    <p className="text-sm text-slate-500 line-clamp-2 font-medium leading-relaxed">{descTranslated}</p>
+                    <div className="mt-4 space-y-2">
+                       {s.provider && <p className="text-xs text-slate-500 font-semibold flex"><span className="w-20 text-slate-400">Provider:</span> <span className="text-slate-800 truncate">{s.provider}</span></p>}
+                       {s.amount && <p className="text-xs text-slate-500 font-semibold flex"><span className="w-20 text-slate-400">Amount:</span> <span className="text-emerald-700 font-bold">{s.amount}</span></p>}
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                    <div className="text-xs text-slate-500 font-bold">
+                       {s.deadline ? `Due ${new Date(s.deadline).toLocaleDateString()}` : 'No Deadline'}
+                    </div>
+                    <button onClick={() => setSelected(s)} className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+                      {t('apply_now', lang)}
+                    </button>
+                  </div>
                 </div>
-                <p className="text-blue-300 text-sm mb-3 line-clamp-2">{s.description}</p>
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {s.education_qualifications?.map(q => <span key={q} className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">{q}</span>)}
-                  {s.communities?.map(c => <span key={c} className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">{c}</span>)}
-                  {s.type && <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full">{s.type}</span>}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setSelected(s)}
-                    className="flex-1 py-2 bg-blue-500/20 text-blue-300 rounded-xl text-sm font-medium hover:bg-blue-500/30 transition-colors">
-                    {t("view_info", lang)}
-                  </button>
-                  {s.link && (
-                    <a href={s.link} target="_blank" rel="noopener noreferrer"
-                      className="px-3 py-2 bg-white/10 text-white rounded-xl text-sm flex items-center gap-1 hover:bg-white/20">
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Modal */}
+        {selected && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+              <div className="flex justify-between items-start mb-6 border-b border-slate-100 pb-4">
+                <h2 className="text-2xl font-extrabold text-slate-800 pr-8 leading-tight">{translateScholarshipName(selected.name, lang)}</h2>
+                <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 p-2 rounded-xl transition-colors">
+                  <XCircle className="h-6 w-6" />
+                </button>
               </div>
-            ))}
+              
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-slate-800 font-bold mb-2 uppercase tracking-wide text-xs">Description</h4>
+                  <p className="text-slate-600 text-sm leading-relaxed font-medium bg-slate-50 p-4 rounded-xl border border-slate-100">{translateDescription(selected.description, lang)}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
+                    <h4 className="text-emerald-800 font-bold mb-1 uppercase tracking-wide text-xs">Financial Benefit</h4>
+                    <p className="text-emerald-700 font-black text-lg">{selected.amount || 'Variable'}</p>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+                     <h4 className="text-blue-800 font-bold mb-1 uppercase tracking-wide text-xs">Provider</h4>
+                     <p className="text-blue-700 font-bold">{selected.provider || 'State Government'}</p>
+                  </div>
+                </div>
+
+                {selected.eligibility_criteria && (
+                  <div>
+                    <h4 className="text-slate-800 font-bold mb-2 uppercase tracking-wide text-xs flex items-center gap-2"><Award className="h-4 w-4 text-amber-500"/> Eligibility Criteria</h4>
+                    <p className="text-slate-600 text-sm whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100">{selected.eligibility_criteria}</p>
+                  </div>
+                )}
+                
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {selected.education_qualifications && (() => {
+                      let arr = [];
+                      try { arr = Array.isArray(selected.education_qualifications) ? selected.education_qualifications : JSON.parse(selected.education_qualifications || "[]"); } catch(e){}
+                      return arr;
+                  })().map((q, i) => (
+                    <span key={i} className="bg-indigo-50 text-indigo-700 font-bold text-xs px-3 py-1.5 rounded-lg border border-indigo-100">{q}</span>
+                  ))}
+                  {selected.communities && (() => {
+                      let arr = [];
+                      try { arr = Array.isArray(selected.communities) ? selected.communities : JSON.parse(selected.communities || "[]"); } catch(e){}
+                      return arr;
+                  })().map((c, i) => (
+                    <span key={i} className="bg-amber-50 text-amber-700 font-bold text-xs px-3 py-1.5 rounded-lg border border-amber-100">{c}</span>
+                  ))}
+                </div>
+
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3 flex-wrap">
+                {selected.link && (
+                  <a href={selected.link} target="_blank" rel="noopener noreferrer" className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-slate-200 transition-colors flex items-center gap-2 border border-slate-200">
+                    Official Portal <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+                {appliedIds.has(selected._id || selected.id) ? (
+                  <button disabled className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-sm tracking-widest uppercase border border-emerald-200 flex items-center gap-2">
+                     <CheckCircle className="h-4 w-4"/> Already Applied
+                  </button>
+                ) : isExpired(selected.deadline) ? (
+                   <button disabled className="px-6 py-2.5 bg-red-100 text-red-800 rounded-xl font-black text-sm tracking-widest uppercase border border-red-200 flex items-center gap-2">
+                      <XCircle className="h-4 w-4"/> Deadline Passed
+                   </button>
+                ) : (
+                  <button onClick={() => handleApply(selected)} disabled={applying} className="px-6 py-2.5 bg-blue-600 text-white shadow-md rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2">
+                    {applying ? "Processing..." : "Apply Instantly"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </main>
-
-      {/* Detail Modal */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelected(null)}>
-          <div className="bg-slate-800 border border-white/20 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl p-6" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">✕</button>
-            <h2 className="text-xl font-bold text-white mb-1">{selected.name}</h2>
-            {selected.provider && <p className="text-blue-400 text-sm mb-4">{selected.provider}</p>}
-
-            <div className="space-y-3 text-sm mb-6">
-              {selected.amount && <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3"><span className="text-green-300 font-medium">💰 Amount:</span> <span className="text-green-200">{selected.amount}</span></div>}
-              <p className="text-blue-200">{selected.description}</p>
-
-              {selected.eligibility_criteria && (
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
-                  <span className="text-blue-300 font-medium">📋 {t("eligibility_criteria", lang)}:</span>
-                  <p className="text-blue-200 mt-1">{selected.eligibility_criteria}</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2">
-                {selected.min_percentage && <div className="bg-white/5 rounded-lg p-2"><span className="text-blue-300 text-xs">Min %</span><div className="text-white font-bold">{selected.min_percentage}%</div></div>}
-                {selected.income_limit && <div className="bg-white/5 rounded-lg p-2"><span className="text-blue-300 text-xs">Income Limit</span><div className="text-white font-bold">₹{selected.income_limit.toLocaleString()}</div></div>}
-                {selected.deadline && <div className="bg-white/5 rounded-lg p-2"><span className="text-blue-300 text-xs">{t("deadline", lang)}</span><div className={`font-bold ${isExpired(selected.deadline) ? 'text-red-400' : 'text-white'}`}>{new Date(selected.deadline).toLocaleDateString()}</div></div>}
-                {(selected.min_age || selected.max_age) && <div className="bg-white/5 rounded-lg p-2"><span className="text-blue-300 text-xs">Age Range</span><div className="text-white font-bold">{selected.min_age || '−'}—{selected.max_age || '−'} yrs</div></div>}
-              </div>
-
-              <div className="flex flex-wrap gap-1">
-                {selected.education_qualifications?.map(q => <span key={q} className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">{q}</span>)}
-                {selected.communities?.map(c => <span key={c} className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">{c}</span>)}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="space-y-2">
-              {isExpired(selected.deadline) ? (
-                <div className="text-center py-2 bg-red-500/20 text-red-300 rounded-xl font-medium">
-                  <XCircle className="inline h-4 w-4 mr-1" /> Scholarship Closed
-                </div>
-              ) : appliedIds.has(selected._id || selected.id) ? (
-                <div className="text-center py-2 bg-green-500/20 text-green-300 rounded-xl font-medium">
-                  <CheckCircle className="inline h-4 w-4 mr-1" /> Already Applied
-                </div>
-              ) : (
-                <button onClick={() => handleApply(selected)} disabled={applying}
-                  className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-emerald-700 disabled:opacity-50">
-                  {applying ? "Applying..." : "📝 Apply & Track"}
-                </button>
-              )}
-
-              {selected.link && (
-                <a href={selected.link} target="_blank" rel="noopener noreferrer"
-                  className="block w-full py-2 bg-blue-500/20 text-blue-300 rounded-xl font-medium text-center hover:bg-blue-500/30">
-                  🔗 Visit Official Portal
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

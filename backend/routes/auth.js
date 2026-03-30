@@ -63,10 +63,19 @@ router.post("/auth/send-otp", async (req, res) => {
           </div>
         `,
       });
-      console.log(`\n📧 OTP for ${email}: ${otp}`);
-      console.log(`📧 Preview URL: ${nodemailer.getTestMessageUrl(info)}\n`);
+      console.log(`\n╔══════════════════════════════════════╗`);
+      console.log(`║  📧 OTP CODE: ${otp}                  ║`);
+      console.log(`║  📬 Email: ${email}`);
+      console.log(`╚══════════════════════════════════════╝\n`);
+      if (nodemailer.getTestMessageUrl(info)) {
+        console.log(`🔗 Preview: ${nodemailer.getTestMessageUrl(info)}\n`);
+      }
     } catch (emailErr) {
-      console.log(`\n📧 OTP for ${email}: ${otp} (Email sending failed, use this OTP directly)\n`);
+      console.log(`\n╔══════════════════════════════════════╗`);
+      console.log(`║  📧 OTP CODE: ${otp}                  ║`);
+      console.log(`║  📬 Email: ${email}`);
+      console.log(`║  ⚠️  Email send failed, use OTP above ║`);
+      console.log(`╚══════════════════════════════════════╝\n`);
     }
 
     // Mask email for response

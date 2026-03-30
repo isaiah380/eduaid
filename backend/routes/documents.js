@@ -138,10 +138,27 @@ function verifyDocument(fileName, fileSize, mimeType, documentType) {
     };
   }
 
+  let finalReason = `${rules.label} verified successfully via DigiLocker. Matched keywords: ${matchedKeywords.join(', ')}.`;
+
+  // Simulated OCR: Extract percentage if it's a marksheet
+  if (['10th_marksheet', '12th_marksheet'].includes(documentType)) {
+    let extractedPercentage = 0;
+    // Check if filename contains a 2 digit number that could be a percentage
+    const numberMatch = fileNameLower.match(/(?:[^0-9]|^)([6-9][0-9])(?:[^0-9]|$)/);
+    if (numberMatch && numberMatch[1]) {
+      extractedPercentage = parseFloat(numberMatch[1]) + (Math.floor(Math.random() * 9) / 10);
+    } else {
+      // Default random realistic percentage between 65.0% and 95.9%
+      extractedPercentage = 65 + Math.floor(Math.random() * 30) + (Math.floor(Math.random() * 9) / 10);
+    }
+    extractedPercentage = extractedPercentage.toFixed(1);
+    finalReason += ` Extracted Percentage: ${extractedPercentage}%`;
+  }
+
   return {
     verified: true,
     status: 'verified',
-    reason: `${rules.label} verified successfully via DigiLocker. Matched keywords: ${matchedKeywords.join(', ')}.`,
+    reason: finalReason,
     warnings,
     digilocker_status: 'VERIFIED',
     confidence

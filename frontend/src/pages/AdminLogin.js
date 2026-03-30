@@ -1,87 +1,99 @@
-import { useState } from "react";
-import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
-import { Shield, Phone, Lock, ArrowLeft } from "lucide-react";
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Shield, Phone, Lock, ArrowLeft } from 'lucide-react';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const API = `${BACKEND_URL}/api`;
 
 function AdminLogin({ onLogin }) {
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError(''); setLoading(true);
 
     try {
-      const res = await axios.post(`${API}/auth/login`, { phone, password, loginType: "ADMIN" });
-      if (res.data.success) {
-        onLogin(res.data.user);
-        localStorage.setItem("role", res.data.user.role);
-        localStorage.setItem("token", res.data.token);
-        navigate("/admin/dashboard");
+      const response = await axios.post(`${API}/auth/login`, { phone, password, loginType: 'ADMIN' });
+      if (response.data.success) {
+        onLogin(response.data.user);
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('role', response.data.user.role);
+        navigate('/admin/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Login failed");
+      setError(err.response?.data?.detail || 'Login failed. Invalid admin credentials.');
     } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 p-4">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+      {/* Tricolor Header Bar */}
+      <div className="h-2 w-full flex fixed top-0 z-50">
+        <div className="flex-1 bg-orange-500"></div>
+        <div className="flex-1 bg-white"></div>
+        <div className="flex-1 bg-green-600"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        <button onClick={() => navigate("/")} className="text-blue-300 hover:text-white mb-4 flex items-center gap-1 text-sm">
-          <ArrowLeft className="h-4 w-4" /> Back to role selection
-        </button>
+      <div className="flex-1 flex items-center justify-center p-4 relative py-12">
+        <div className="relative z-10 w-full max-w-md">
+          <button onClick={() => navigate('/')} className="text-emerald-600 hover:text-emerald-800 mb-6 flex items-center gap-1 text-sm font-bold tracking-wide uppercase transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back to role selection
+          </button>
 
-        <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-2xl p-8">
-          <div className="text-center mb-6">
-            <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl shadow-lg">
-                <Shield className="h-8 w-8 text-white" />
+          <Card className="bg-white border-slate-200 shadow-xl shadow-slate-200/50">
+            <CardHeader className="space-y-2 text-center border-b border-slate-100 pb-6 pt-8 bg-slate-50/50">
+              <div className="flex justify-center mb-4">
+                <div className="bg-emerald-600 p-4 rounded-2xl shadow-md">
+                  <Shield className="h-8 w-8 text-white" />
+                </div>
               </div>
-            </div>
-            <h2 className="text-2xl font-bold text-white">Admin Login</h2>
-            <p className="text-blue-200 text-sm mt-1">College administration panel</p>
-          </div>
+              <CardTitle className="text-3xl font-extrabold text-slate-800 tracking-tight">Admin Portal</CardTitle>
+              <CardDescription className="text-slate-500 font-bold tracking-widest uppercase">College & Provider Access</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleLogin} className="pt-6">
+              <CardContent className="space-y-5">
+                {error && <Alert variant="destructive" className="bg-red-50 border-red-200"><AlertDescription className="text-red-700 font-medium">{error}</AlertDescription></Alert>}
 
-          {error && (
-            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-3 mb-4">
-              <p className="text-red-200 text-sm">{error}</p>
-            </div>
-          )}
+                <div className="space-y-1.5 border-2 border-slate-100 bg-slate-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                     <Shield className="h-4 w-4 text-emerald-600"/>
+                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Administrator Credentials</span>
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium">Username: <strong className="text-slate-900">9999999999</strong></p>
+                  <p className="text-xs text-slate-700 font-medium">Password: <strong className="text-slate-900">admin123</strong></p>
+                </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-blue-100 text-sm flex items-center gap-1"><Phone className="h-3 w-3" />Phone Number</label>
-              <input type="tel" placeholder="Admin phone number" value={phone} onChange={(e) => setPhone(e.target.value)} required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-blue-300/50 focus:outline-none focus:border-indigo-400" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-blue-100 text-sm flex items-center gap-1"><Lock className="h-3 w-3" />Password</label>
-              <input type="password" placeholder="Admin password" value={password} onChange={(e) => setPassword(e.target.value)} required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-blue-300/50 focus:outline-none focus:border-indigo-400" />
-            </div>
-            <button type="submit" disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold
-                         hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg disabled:opacity-50">
-              {loading ? "Logging in..." : "Login as Admin"}
-            </button>
-          </form>
-
-          <div className="mt-4 p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl">
-            <p className="text-indigo-200 text-xs text-center">
-              🔑 Default admin: Phone <strong>9999999999</strong> / Password <strong>admin123</strong>
-            </p>
-          </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-bold uppercase text-xs tracking-wider pl-1"><Phone className="inline h-3.5 w-3.5 mr-1 text-emerald-600" />Admin Phone</Label>
+                  <Input type="tel" placeholder="10-digit mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} required
+                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-300 focus:border-emerald-500 focus:ring-emerald-500 font-medium py-6" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-bold uppercase text-xs tracking-wider pl-1"><Lock className="inline h-3.5 w-3.5 mr-1 text-emerald-600" />Password</Label>
+                  <Input type="password" placeholder="Enter admin password" value={password} onChange={(e) => setPassword(e.target.value)} required
+                    className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-300 focus:border-emerald-500 focus:ring-emerald-500 font-medium py-6" />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-4 pb-8">
+                <Button type="submit" className="w-full bg-emerald-600 text-white font-bold py-6 text-sm tracking-widest uppercase shadow-md hover:bg-emerald-700 transition-colors" disabled={loading}>
+                  {loading ? 'Authenticating...' : 'Secure Login'}
+                </Button>
+                <div className="text-sm text-center text-slate-500 font-medium mt-4">
+                  Not an admin? <Link to="/login" className="text-emerald-600 hover:text-emerald-800 font-bold tracking-wide">Student Login</Link>
+                </div>
+              </CardFooter>
+            </form>
+          </Card>
         </div>
       </div>
     </div>
