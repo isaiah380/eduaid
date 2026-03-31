@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { GraduationCap, Phone, Lock, ArrowLeft, Shield } from 'lucide-react';
+import { GraduationCap, Phone, Lock, ArrowLeft } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const API = `${BACKEND_URL}/api`;
@@ -64,14 +64,7 @@ function Login({ onLogin }) {
               <CardContent className="space-y-5">
                 {error && <Alert variant="destructive" className="bg-red-50 border-red-200"><AlertDescription className="text-red-700 font-medium">{error}</AlertDescription></Alert>}
 
-                <div className="space-y-1.5 border-2 border-slate-100 bg-slate-50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                     <Shield className="h-4 w-4 text-emerald-600"/>
-                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Demo Credentials</span>
-                  </div>
-                  <p className="text-xs text-slate-700 font-medium">Phone: <strong className="text-slate-900">9876543210</strong></p>
-                  <p className="text-xs text-slate-700 font-medium">Password: <strong className="text-slate-900">password123</strong></p>
-                </div>
+
 
                 <div className="space-y-2">
                   <Label className="text-slate-700 font-bold"><Phone className="inline h-4 w-4 mr-2 text-slate-400" />Phone Number</Label>

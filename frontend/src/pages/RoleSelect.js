@@ -1,10 +1,26 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Users, Shield, ArrowRight } from 'lucide-react';
+import { GraduationCap, Users, Shield, ArrowRight, Globe } from 'lucide-react';
 import { t } from '@/lib/i18n';
+
+const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'hi', name: 'हिन्दी' },
+  { code: 'bn', name: 'বাংলা' },
+  { code: 'te', name: 'తెలుగు' },
+  { code: 'mr', name: 'मराठी' },
+  { code: 'ta', name: 'தமிழ்' }
+];
 
 function RoleSelect() {
   const navigate = useNavigate();
-  const lang = localStorage.getItem('language') || 'en';
+  const [lang, setLang] = useState(localStorage.getItem('language') || 'en');
+
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLang(newLang);
+    localStorage.setItem('language', newLang);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative overflow-hidden">
@@ -15,7 +31,21 @@ function RoleSelect() {
         <div className="flex-1 bg-green-600"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-2xl py-8">
+      {/* Language Switcher */}
+      <div className="absolute top-6 right-6 z-50 flex items-center bg-white border border-slate-200 rounded-xl shadow-sm px-3 py-1.5 hover:border-blue-300 transition-colors">
+        <Globe className="h-4 w-4 text-slate-500 mr-2" />
+        <select 
+          value={lang} 
+          onChange={handleLanguageChange}
+          className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer appearance-none pr-2"
+        >
+          {LANGUAGES.map(l => (
+            <option key={l.code} value={l.code}>{l.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="relative z-10 w-full max-w-2xl py-8 mt-12">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">

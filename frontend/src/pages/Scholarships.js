@@ -140,7 +140,7 @@ function Scholarships({ user, onLogout }) {
               const descTranslated = translateDescription(s.description, lang);
 
               return (
-                <div key={s._id || s.id} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group">
+                <div key={s._id || s.id} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative" onClick={() => setSelected(s)}>
                   <div className="mb-4 flex-1">
                     <div className="flex justify-between items-start mb-3">
                       <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-md border
@@ -166,7 +166,7 @@ function Scholarships({ user, onLogout }) {
                     <div className="text-xs text-slate-500 font-bold">
                        {s.deadline ? `Due ${new Date(s.deadline).toLocaleDateString()}` : 'No Deadline'}
                     </div>
-                    <button onClick={() => setSelected(s)} className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+                    <button onClick={(e) => { e.stopPropagation(); setSelected(s); }} className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
                       {t('apply_now', lang)}
                     </button>
                   </div>
