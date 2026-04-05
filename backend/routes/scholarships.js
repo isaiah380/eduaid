@@ -101,6 +101,7 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
       has12thMarksheet: false,
       income: null,
       category: null,
+      age: null,
       percentage10th: null,
       percentage12th: null,
       verifiedDocTypes: []
@@ -112,6 +113,8 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
 
       if (doc.document_type === 'aadhar') {
         profile.hasAadhaar = true;
+        const ageMatch = ocr.match(/Age:\s*(\d+)/i);
+        if (ageMatch) profile.age = parseInt(ageMatch[1]);
       }
       if (doc.document_type === 'income_certificate') {
         profile.hasIncomeCert = true;
@@ -180,6 +183,21 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
         }
       }
 
+      // 4. Age limit check (if user has verified Aadhaar)
+      if (profile.age !== null && sch.max_age) {
+        if (profile.age > sch.max_age) {
+          eligible = false;
+          reasons.push(`Maximum age is ${sch.max_age} (you are: ${profile.age})`);
+        }
+      }
+      
+      if (profile.age !== null && sch.min_age) {
+        if (profile.age < sch.min_age) {
+          eligible = false;
+          reasons.push(`Minimum age is ${sch.min_age} (you are: ${profile.age})`);
+        }
+      }
+
       return {
         scholarship_id: sch.id,
         eligible,
@@ -227,7 +245,7 @@ router.post("/scholarships/scrape", async (req, res) => {
           description: title + " - Financial assistance for deserving students.",
           type: "MERIT",
           education_qualifications: JSON.stringify(["10th", "12th", "Undergraduate"]),
-          communities: JSON.stringify(["SC", "ST", "OBC", "General", "Minority"]),
+          communities: JSON.stringify(["General", "SC", "OBC"]),
           income_limit: 400000,
           min_percentage: 60,
           deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], // 30 days default
@@ -273,7 +291,7 @@ router.post("/scholarships/scrape", async (req, res) => {
           description: d.desc,
           type: "MERIT",
           education_qualifications: JSON.stringify(["12th", "Undergraduate"]),
-          communities: JSON.stringify(["General", "SC", "ST", "OBC"]),
+          communities: JSON.stringify(["General"]),
           income_limit: 500000,
           min_percentage: 65,
           deadline: new Date(Date.now() + 60*24*60*60*1000).toISOString().split('T')[0],

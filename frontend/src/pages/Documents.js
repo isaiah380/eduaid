@@ -96,6 +96,20 @@ function Documents(props) {
     }, 2000);
   }
 
+  function handleDelete(docId) {
+    if (!window.confirm("Are you sure you want to delete this document? This will remove your eligibility based on this document.")) return;
+    
+    setError(''); setSuccess('');
+    axios.delete(API + '/documents/' + docId)
+      .then(function(res) {
+        if (res.data.success) {
+          setSuccess('Document deleted successfully');
+          setDocuments(documents.filter(function(d) { return d.id !== docId; }));
+        }
+      })
+      .catch(function(err) { setError('Failed to delete document'); });
+  }
+
   function getStatusBadge(status) {
     if (status === 'verified') return (
       <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
@@ -126,6 +140,7 @@ function Documents(props) {
     if (field === 'income') { var m = ocr.match(/Income:\s*([\S]+)/i); return m ? m[1] : null; }
     if (field === 'category') { var m = ocr.match(/Category:\s*([A-Z]+)/i); return m ? m[1] : null; }
     if (field === 'board') { var m = ocr.match(/Board:\s*([A-Z\s]+)/i); return m ? m[1].trim() : null; }
+    if (field === 'age') { var m = ocr.match(/Age:\s*(\d+)/i); return m ? m[1] : null; }
     return null;
   }
 
@@ -250,6 +265,7 @@ function Documents(props) {
                   var aadhaar = extractField(doc.ocr_result, 'aadhaar');
                   var income = extractField(doc.ocr_result, 'income');
                   var category = extractField(doc.ocr_result, 'category');
+                  var age = extractField(doc.ocr_result, 'age');
                   var board = extractField(doc.ocr_result, 'board');
                   var typeLabel = '';
                   for (var i = 0; i < DOC_TYPES.length; i++) {
@@ -281,6 +297,7 @@ function Documents(props) {
                           {aadhaar && <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full border border-violet-200">ID: {aadhaar}</span>}
                           {income && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">Income: {income}</span>}
                           {category && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">Category: {category}</span>}
+                          {age && <span className="text-[10px] font-bold bg-pink-50 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">Age: {age}</span>}
                           {board && <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">Board: {board}</span>}
                         </div>
                       )}
@@ -293,14 +310,19 @@ function Documents(props) {
 
                       <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
                         <span className="text-xs text-slate-400 font-medium">Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                        
-                        {doc.verification_status === 'pending' && (
-                          <button onClick={function() { handleVerify(doc.id); }} disabled={verifying === doc.id}
-                            className="text-xs px-4 py-2 bg-slate-800 text-white shadow-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 font-bold transition-colors">
-                            <Play className="h-3 w-3" />
-                            {verifying === doc.id ? 'Analyzing Content...' : 'Run Verification'}
+                        <div className="flex gap-2">
+                          <button onClick={function() { handleDelete(doc.id); }} className="text-xs px-3 py-2 bg-red-50 text-red-600 shadow-sm rounded-lg hover:bg-red-100 border border-red-200 disabled:opacity-50 flex items-center font-bold transition-colors">
+                            Delete
                           </button>
-                        )}
+                          
+                          {doc.verification_status === 'pending' && (
+                            <button onClick={function() { handleVerify(doc.id); }} disabled={verifying === doc.id}
+                              className="text-xs px-4 py-2 bg-slate-800 text-white shadow-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 font-bold transition-colors">
+                              <Play className="h-3 w-3" />
+                              {verifying === doc.id ? 'Analyzing Content...' : 'Run Verification'}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

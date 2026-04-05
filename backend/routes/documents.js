@@ -154,6 +154,21 @@ function verifyDocument(fileName, fileSize, mimeType, documentType) {
     extractedPercentage = extractedPercentage.toFixed(1);
     finalReason += ` Extracted Percentage: ${extractedPercentage}%`;
   }
+  
+  if (documentType === 'aadhar') {
+    let age = 20; // default young student
+    const ageMatch = fileNameLower.match(/age\s*(\d{2})/);
+    if (ageMatch && ageMatch[1]) {
+      age = parseInt(ageMatch[1]);
+    } else if (fileNameLower.includes('old') || fileNameLower.includes('adult')) {
+      age = 45; // Test simulated older profile
+    }
+    
+    // Calculate a DOB year from the age
+    const currentYear = new Date().getFullYear();
+    const dobYear = currentYear - age;
+    finalReason += ` Aadhaar: XXXX-XXXX-1234 | DOB: 01/01/${dobYear} | Age: ${age}`;
+  }
 
   return {
     verified: true,
@@ -207,6 +222,35 @@ router.get("/documents/:userId", (req, res) => {
     res.json({ success: true, documents: docs });
   } catch (err) {
     res.status(500).json({ success: false, detail: "Failed to fetch documents" });
+  }
+});
+
+// ==================== DELETE DOCUMENT ====================
+router.delete("/documents/:id", (req, res) => {
+  try {
+    const docId = req.params.id;
+    const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(docId);
+    
+    if (!doc) {
+      return res.status(404).json({ success: false, detail: "Document not found" });
+    }
+
+    // Try to remove from filesystem if exists
+    try {
+      if (fs.existsSync(doc.file_path)) {
+        fs.unlinkSync(doc.file_path);
+      }
+    } catch (e) {
+      console.error("Failed to delete file from disk:", e);
+    }
+
+    // Remove from DB
+    db.prepare("DELETE FROM documents WHERE id = ?").run(docId);
+
+    res.json({ success: true, detail: "Document deleted successfully" });
+  } catch (err) {
+    console.error("Delete error:", err);
+    res.status(500).json({ success: false, detail: "Failed to delete document" });
   }
 });
 

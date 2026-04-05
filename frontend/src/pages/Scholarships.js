@@ -66,13 +66,21 @@ function Scholarships({ user, onLogout }) {
     if (searchQuery) result = result.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase()));
     if (eduFilter) result = result.filter(s => {
       if (!s.education_qualifications) return false;
-      const quals = Array.isArray(s.education_qualifications) ? s.education_qualifications : JSON.parse(s.education_qualifications || '[]');
+      let quals = [];
+      try { quals = Array.isArray(s.education_qualifications) ? s.education_qualifications : JSON.parse(s.education_qualifications || '[]'); } 
+      catch(e) { quals = typeof s.education_qualifications === 'string' ? s.education_qualifications.split(',').map(q=>q.trim()) : []; }
       return quals.some(q => q === eduFilter);
     });
     if (commFilter) result = result.filter(s => {
       if (!s.communities) return false;
-      const comms = Array.isArray(s.communities) ? s.communities : JSON.parse(s.communities || '[]');
-      return comms.some(c => c === commFilter || c.includes(commFilter) || commFilter.includes(c));
+      let comms = [];
+      try { comms = Array.isArray(s.communities) ? s.communities : JSON.parse(s.communities || '[]'); } 
+      catch (e) { comms = typeof s.communities === 'string' ? s.communities.split(',').map(c=>c.trim()) : []; }
+      
+      // Some schemes apply to ALL if 'General' or blank.
+      return comms.some(c => c.toLowerCase() === commFilter.toLowerCase() || 
+                             c.toLowerCase().includes(commFilter.toLowerCase()) || 
+                             commFilter.toLowerCase().includes(c.toLowerCase()));
     });
     if (typeFilter) result = result.filter(s => s.type === typeFilter);
     if (eligibleOnly) result = result.filter(s => {
@@ -182,6 +190,11 @@ function Scholarships({ user, onLogout }) {
                   {userProfile.percentage10th && (
                     <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
                       📄 10th: {userProfile.percentage10th}%
+                    </span>
+                  )}
+                  {userProfile.age !== null && (
+                    <span className="text-[10px] font-bold bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">
+                      🎂 Age: {userProfile.age}
                     </span>
                   )}
                 </div>
