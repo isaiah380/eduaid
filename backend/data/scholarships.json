@@ -4,8 +4,13 @@
     "name": "National Scholarship Portal (NSP) - Post Matric Scholarship for SC Students",
     "description": "Central Government scholarship for SC students pursuing post-matriculation courses. Covers tuition fees, maintenance allowance, and other charges.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["SC/ST"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST"
+    ],
     "income_limit": 250000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -22,8 +27,13 @@
     "name": "NSP - Post Matric Scholarship for OBC Students",
     "description": "Scholarship for OBC students pursuing post-matriculation studies at recognized institutions in India.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["OBC"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "OBC"
+    ],
     "income_limit": 100000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -40,8 +50,16 @@
     "name": "NSP - Central Sector Scheme of Scholarship",
     "description": "Merit-based scholarship for college and university students from families with limited income. Top 20th percentile of 12th class exam scorers.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 800000,
     "min_percentage": 80,
     "deadline": "2026-12-31",
@@ -58,8 +76,15 @@
     "name": "Prime Minister's Scholarship Scheme (PMSS)",
     "description": "Scholarship for dependent wards of ex-servicemen/ex-coast guard personnel for professional courses.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 60,
     "deadline": "2026-10-31",
@@ -76,8 +101,15 @@
     "name": "AICTE Pragati Scholarship for Girls",
     "description": "AICTE scholarship exclusively for girl students pursuing technical education (degree/diploma) at AICTE-approved institutions.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 800000,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -94,8 +126,15 @@
     "name": "AICTE Saksham Scholarship for Disabled",
     "description": "Scholarship for differently-abled students pursuing technical education at AICTE-approved institutions.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 800000,
     "min_percentage": 40,
     "deadline": "2026-12-31",
@@ -112,8 +151,12 @@
     "name": "Maulana Azad National Fellowship (MANF)",
     "description": "Fellowship for minority community students pursuing M.Phil/Ph.D in sciences, humanities, social sciences.",
     "type": "MINORITY",
-    "education_qualifications": ["Doctorate"],
-    "communities": ["Minority"],
+    "education_qualifications": [
+      "Doctorate"
+    ],
+    "communities": [
+      "Minority"
+    ],
     "income_limit": 600000,
     "min_percentage": 55,
     "deadline": "2026-09-30",
@@ -130,8 +173,12 @@
     "name": "Begum Hazrat Mahal National Scholarship",
     "description": "For meritorious girl students belonging to minority communities studying in classes 9 to 12.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "Minority"
+    ],
     "income_limit": 200000,
     "min_percentage": 50,
     "deadline": "2026-10-31",
@@ -148,8 +195,15 @@
     "name": "Reliance Foundation Undergraduate Scholarship",
     "description": "Merit-cum-means scholarship for students pursuing undergraduate studies in engineering, computer science, mathematics, and sciences.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 1500000,
     "min_percentage": 60,
     "deadline": "2026-09-15",
@@ -166,8 +220,16 @@
     "name": "Tata Trusts Scholarship",
     "description": "Need-based scholarship for underprivileged students pursuing professional courses at select institutions.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 400000,
     "min_percentage": 60,
     "deadline": "2026-08-31",
@@ -184,8 +246,13 @@
     "name": "Swami Dayanand Education Foundation Scholarship",
     "description": "Scholarship for B.Tech/MBBS students who scored 80%+ in Class 12 from specific boards.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC"
+    ],
     "income_limit": 500000,
     "min_percentage": 80,
     "deadline": "2026-07-31",
@@ -202,8 +269,16 @@
     "name": "HDFC Bank Parivartan's ECS Scholarship",
     "description": "Scholarship for students from underprivileged sections across school, UG, PG and professional courses.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 800000,
     "min_percentage": 55,
     "deadline": "2026-09-30",
@@ -220,8 +295,15 @@
     "name": "Kotak Kanya Scholarship",
     "description": "For meritorious girl students from underprivileged backgrounds pursuing professional courses like Engineering, Medicine, Architecture, etc.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 350000,
     "min_percentage": 75,
     "deadline": "2026-12-31",
@@ -238,8 +320,15 @@
     "name": "INSPIRE Scholarship (Innovation in Science Pursuit)",
     "description": "DST scholarship for meritorious students pursuing BSc, BS, Int MSc in natural & basic sciences.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 85,
     "deadline": "2026-10-31",
@@ -256,8 +345,15 @@
     "name": "Kishore Vaigyanik Protsahan Yojana (KVPY)",
     "description": "National fellowship program for students interested in pursuing research career in basic sciences.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 75,
     "deadline": "2026-08-31",
@@ -274,8 +370,15 @@
     "name": "ISHAN UDAY Scholarship for North Eastern Region",
     "description": "UGC scholarship for students from NE states pursuing UG courses outside their home state.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 450000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -292,8 +395,15 @@
     "name": "Indira Gandhi Scholarship for Single Girl Child",
     "description": "UGC scholarship for single girl child pursuing non-professional PG courses in recognized universities.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -310,8 +420,15 @@
     "name": "Post Graduate Indira Gandhi Scholarship for Single Girl Child",
     "description": "For single girl child pursuing PG programs. Promotes higher education for girls.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 55,
     "deadline": "2026-11-30",
@@ -328,8 +445,17 @@
     "name": "Sitaram Jindal Foundation Scholarship",
     "description": "Need-based scholarship for Indian students pursuing education from Class 1 to Post Graduation, Doctorate and vocational courses.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate", "Doctorate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate",
+      "Doctorate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 250000,
     "min_percentage": 60,
     "deadline": "2026-12-31",
@@ -346,8 +472,15 @@
     "name": "LIC Golden Jubilee Scholarship",
     "description": "Merit-cum-means scholarship for economically weaker students pursuing higher education in India.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 200000,
     "min_percentage": 60,
     "deadline": "2026-12-15",
@@ -364,8 +497,16 @@
     "name": "Vidyasaarathi Scholarship (NSDL e-Gov)",
     "description": "Platform for various corporate scholarships in engineering, management, commerce and other professional courses.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 600000,
     "min_percentage": 60,
     "deadline": "2026-10-31",
@@ -382,8 +523,15 @@
     "name": "Wipro Earthian Sustainability Scholarship",
     "description": "Scholarship acknowledging young leaders working on sustainability and environmental challenges.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 60,
     "deadline": "2026-09-30",
@@ -400,8 +548,14 @@
     "name": "Infosys InStep Scholarship",
     "description": "Scholarship for meritorious engineering students from premier institutions in India.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST"
+    ],
     "income_limit": null,
     "min_percentage": 75,
     "deadline": "2026-08-15",
@@ -418,8 +572,15 @@
     "name": "Google Generation Scholarship (APAC)",
     "description": "For students in CS/related fields who demonstrate strong academic background, leadership, and financial need.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 70,
     "deadline": "2026-12-15",
@@ -436,8 +597,15 @@
     "name": "Adobe India Women in Technology Scholarship",
     "description": "For female students pursuing undergraduate education in technology at Indian universities.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 70,
     "deadline": "2026-10-31",
@@ -454,8 +622,13 @@
     "name": "ONGC Scholarship for SC/ST Students",
     "description": "Scholarship for SC/ST students pursuing professional courses like Engineering, Medical, and MBA.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["SC/ST"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST"
+    ],
     "income_limit": 480000,
     "min_percentage": 60,
     "deadline": "2026-11-30",
@@ -472,8 +645,13 @@
     "name": "NTPC Scholarship for Engineering Students",
     "description": "For SC/ST/OBC students studying in full-time engineering degree courses at AICTE-approved institutions.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["SC/ST", "OBC"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "SC/ST",
+      "OBC"
+    ],
     "income_limit": 500000,
     "min_percentage": 55,
     "deadline": "2026-09-30",
@@ -490,8 +668,12 @@
     "name": "IOCL Academic Scholarship for SC/ST Students",
     "description": "Indian Oil Corporation scholarship for SC/ST students pursuing 10+/Graduation in engineering/medical/business.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["SC/ST"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "SC/ST"
+    ],
     "income_limit": 300000,
     "min_percentage": 55,
     "deadline": "2026-10-31",
@@ -508,8 +690,13 @@
     "name": "Maulana Azad National Scholarship for Minority Girls",
     "description": "Financial support for meritorious minority girl students who have secured 55%+ in previous exam.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "Minority"
+    ],
     "income_limit": 200000,
     "min_percentage": 55,
     "deadline": "2026-10-31",
@@ -526,8 +713,15 @@
     "name": "Narotam Sekhsaria Foundation Scholarship",
     "description": "Zero-interest loan scholarship for PG studies in India and overseas for all streams.",
     "type": "MERIT",
-    "education_qualifications": ["Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 65,
     "deadline": "2026-04-30",
@@ -544,8 +738,16 @@
     "name": "Azim Premji Foundation Fellowship",
     "description": "Fellowship for graduates willing to work in education sector in rural India.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 55,
     "deadline": "2026-03-31",
@@ -562,8 +764,15 @@
     "name": "SOF Scholarship (Science Olympiad Foundation)",
     "description": "Scholarships through national/international Olympiad exams in science, math, and computer science.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 70,
     "deadline": "2026-12-31",
@@ -580,8 +789,15 @@
     "name": "KVPY (INSPIRE) – Science Talent Search",
     "description": "National program to identify students with scientific talent for pursuing research career.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 75,
     "deadline": "2026-09-30",
@@ -598,8 +814,16 @@
     "name": "Bihar Student Credit Card Scheme",
     "description": "Education loan scheme by Bihar government for students from Bihar pursuing higher education.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -616,8 +840,15 @@
     "name": "West Bengal Kanyashree Prakalpa",
     "description": "West Bengal state scholarship for girl students to promote female education and prevent child marriage.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 120000,
     "min_percentage": 45,
     "deadline": "2026-12-31",
@@ -634,8 +865,16 @@
     "name": "UP Scholarship (Post Matric)",
     "description": "Uttar Pradesh state scholarship for students pursuing post-matriculation education in recognized institutions.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 300000,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -652,8 +891,13 @@
     "name": "Maharashtra State Scholarship (Rajarshi Shahu Maharaj)",
     "description": "Government of Maharashtra scholarship for OBC/SEBC students for higher education.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["OBC"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "OBC"
+    ],
     "income_limit": 250000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -670,8 +914,14 @@
     "name": "Karnataka Vidyasiri Scholarship",
     "description": "Post-matric scholarship for SC/ST/OBC students from Karnataka for higher education.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["SC/ST", "OBC"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST",
+      "OBC"
+    ],
     "income_limit": 250000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -688,8 +938,13 @@
     "name": "Tamil Nadu government Scholarship for SC/ST",
     "description": "Post-matric scholarship for SC/ST students from Tamil Nadu pursuing higher education.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["SC/ST"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST"
+    ],
     "income_limit": 250000,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -706,8 +961,14 @@
     "name": "Rajasthan Ambedkar DBT Voucher Scheme",
     "description": "Residential and teaching support vouchers for SC/ST/OBC students studying outside their home district.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["SC/ST", "OBC"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST",
+      "OBC"
+    ],
     "income_limit": 250000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -724,8 +985,13 @@
     "name": "Telangana State Overseas Scholarship",
     "description": "Scholarship for meritorious BC/SC/ST students from Telangana for pursuing MS/MBA/PG abroad.",
     "type": "MERIT",
-    "education_qualifications": ["Postgraduate"],
-    "communities": ["SC/ST", "OBC"],
+    "education_qualifications": [
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST",
+      "OBC"
+    ],
     "income_limit": 500000,
     "min_percentage": 60,
     "deadline": "2026-06-30",
@@ -742,8 +1008,13 @@
     "name": "Kerala State Government Scholarship for Minorities",
     "description": "Scholarship for minority students from Kerala for pursuing higher education within and outside the state.",
     "type": "MINORITY",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "Minority"
+    ],
     "income_limit": 400000,
     "min_percentage": 50,
     "deadline": "2026-11-30",
@@ -760,8 +1031,16 @@
     "name": "AP Jnanabhumi Scholarship",
     "description": "Andhra Pradesh state scholarship for EBC/Kapu/Minority/SC/ST students pursuing higher education.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 250000,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -778,8 +1057,13 @@
     "name": "Foundation for Academic Excellence and Access (FAEA)",
     "description": "Financial and academic support for meritorious students from marginalised sections at premier institutions.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["SC/ST", "OBC"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "SC/ST",
+      "OBC"
+    ],
     "income_limit": 400000,
     "min_percentage": 60,
     "deadline": "2026-07-31",
@@ -796,8 +1080,16 @@
     "name": "Sir Ratan Tata Trust Scholarship",
     "description": "Loan scholarship for Indian students pursuing higher education (PG/research) at reputed institutions.",
     "type": "MERIT",
-    "education_qualifications": ["Postgraduate", "Doctorate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate",
+      "Doctorate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 600000,
     "min_percentage": 60,
     "deadline": "2026-03-31",
@@ -814,8 +1106,16 @@
     "name": "JN Tata Endowment for Higher Education",
     "description": "Loan scholarship for Indian students pursuing PG/doctoral studies abroad at top-ranked universities.",
     "type": "MERIT",
-    "education_qualifications": ["Postgraduate", "Doctorate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate",
+      "Doctorate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 60,
     "deadline": "2026-03-15",
@@ -832,8 +1132,15 @@
     "name": "Buddy4Study India STEM Scholarship",
     "description": "Scholarship for undergraduate students pursuing STEM education, funded by multiple corporate partners.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 800000,
     "min_percentage": 60,
     "deadline": "2026-10-31",
@@ -850,8 +1157,15 @@
     "name": "AICTE Swanath Scholarship for Orphans",
     "description": "Scholarship scheme for orphans, wards of armed forces/CAPF in action, and single parent family students.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 800000,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -868,8 +1182,16 @@
     "name": "Fair & Lovely (Glow & Lovely) Career Foundation Scholarship",
     "description": "Scholarship for women between 15-30 years of age pursuing education or skill development courses.",
     "type": "GIRL_CHILD",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 600000,
     "min_percentage": 50,
     "deadline": "2026-12-31",
@@ -886,8 +1208,16 @@
     "name": "Internshala Career Scholarship",
     "description": "Annual scholarship for students pursuing any degree program, selected via online test and interview.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 55,
     "deadline": "2026-12-31",
@@ -904,8 +1234,14 @@
     "name": "Mahindra All India Talent Scholarship",
     "description": "Merit-cum-means scholarship for diploma and degree engineering students at recognized institutions.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST"
+    ],
     "income_limit": 1200000,
     "min_percentage": 60,
     "deadline": "2026-09-30",
@@ -922,8 +1258,16 @@
     "name": "CSIR-UGC NET Junior Research Fellowship (JRF)",
     "description": "National fellowship for candidates qualifying CSIR-UGC NET for pursuing research in sciences.",
     "type": "MERIT",
-    "education_qualifications": ["Postgraduate", "Doctorate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate",
+      "Doctorate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 55,
     "deadline": "2026-06-30",
@@ -940,8 +1284,16 @@
     "name": "Jamsetji Tata Scholarship for Higher Education Abroad",
     "description": "Full scholarship for meritorious Indian students pursuing PG/PhD at top international universities.",
     "type": "MERIT",
-    "education_qualifications": ["Postgraduate", "Doctorate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Postgraduate",
+      "Doctorate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 70,
     "deadline": "2026-01-31",
@@ -958,8 +1310,15 @@
     "name": "North South Foundation Scholarship",
     "description": "Need-based scholarship for engineering, medical, polytechnic and general degree students across India.",
     "type": "NEED",
-    "education_qualifications": ["Undergraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": 200000,
     "min_percentage": 60,
     "deadline": "2026-08-31",
@@ -976,8 +1335,16 @@
     "name": "SOA National Scholarship (Siksha O Anusandhan)",
     "description": "Merit scholarship for students securing admission to Siksha O Anusandhan deemed university programs.",
     "type": "MERIT",
-    "education_qualifications": ["Undergraduate", "Postgraduate"],
-    "communities": ["General", "OBC", "SC/ST", "Minority"],
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
     "income_limit": null,
     "min_percentage": 75,
     "deadline": "2026-06-30",

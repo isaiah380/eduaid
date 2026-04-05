@@ -1,91 +1,102 @@
+/* eslint-disable */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Upload, CheckCircle, XCircle, Clock, ArrowLeft, FileText, Shield, AlertTriangle, Play, Award } from 'lucide-react';
+import { Upload, CheckCircle, XCircle, Clock, FileText, Shield, AlertTriangle, Play, Award } from 'lucide-react';
 import { t } from '@/lib/i18n';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-const API = `${BACKEND_URL}/api`;
+const API = BACKEND_URL + '/api';
 
-const DOCUMENT_TYPES = [
-  { value: '10th_marksheet', label: '10th Marksheet', naming: 'Include "10th", "marksheet", "ssc", or "matric" in filename' },
-  { value: '12th_marksheet', label: '12th Marksheet', naming: 'Include "12th", "marksheet", "hsc", or "intermediate" in filename' },
-  { value: 'aadhar', label: 'Aadhaar Card', naming: 'Include "aadhar", "aadhaar", or "uid" in filename' },
-  { value: 'income_certificate', label: 'Income Certificate', naming: 'Include "income" and "certificate" in filename' },
-  { value: 'caste_certificate', label: 'Caste Certificate', naming: 'Include "caste" and "certificate" in filename' }
+const DOC_TYPES = [
+  { value: '10th_marksheet', label: '10th Marksheet' },
+  { value: '12th_marksheet', label: '12th Marksheet' },
+  { value: 'aadhar', label: 'Aadhaar Card' },
+  { value: 'income_certificate', label: 'Income Certificate' },
+  { value: 'caste_certificate', label: 'Caste Certificate' }
 ];
 
-function Documents({ user, onLogout }) {
-  const navigate = useNavigate();
-  const lang = localStorage.getItem('language') || 'en';
-  const [documents, setDocuments] = useState([]);
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [verifying, setVerifying] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [verificationResult, setVerificationResult] = useState(null);
+const DOC_HINTS = {
+  'aadhar': 'System will scan for 12-digit UID number, UIDAI references, DOB, and address fields.',
+  'income_certificate': 'System will scan for income amounts, Tahsildar/Revenue authority, financial year.',
+  'caste_certificate': 'System will scan for SC/ST/OBC category references, community certificate title.',
+  '10th_marksheet': 'System will scan for board name, subject marks, percentage/grade, and Class 10 references.',
+  '12th_marksheet': 'System will scan for board name, subject marks, percentage/grade, and Class 12 references.'
+};
 
-  useEffect(() => { fetchDocuments(); }, []);
+function Documents(props) {
+  var user = props.user;
+  var onLogout = props.onLogout;
+  var navigate = useNavigate();
+  var lang = localStorage.getItem('language') || 'en';
+  var [documents, setDocuments] = useState([]);
+  var [selectedType, setSelectedType] = useState('');
+  var [selectedFile, setSelectedFile] = useState(null);
+  var [uploading, setUploading] = useState(false);
+  var [verifying, setVerifying] = useState(null);
+  var [error, setError] = useState('');
+  var [success, setSuccess] = useState('');
+  var [verificationResult, setVerificationResult] = useState(null);
 
-  const fetchDocuments = async () => {
-    try {
-      const res = await axios.get(`${API}/documents/${user.id}`);
-      if (res.data.success) setDocuments(res.data.documents);
-    } catch (err) { console.error(err); }
-  };
+  useEffect(function() { fetchDocuments(); }, []);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  function fetchDocuments() {
+    axios.get(API + '/documents/' + user.id)
+      .then(function(res) { if (res.data.success) setDocuments(res.data.documents); })
+      .catch(function(err) { console.error(err); });
+  }
+
+  function handleFileChange(e) {
+    var file = e.target.files[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { setError('File size must be less than 5MB'); return; }
-      setSelectedFile(file); setError(''); setVerificationResult(null);
+      setSelectedFile(file);
+      setError('');
+      setVerificationResult(null);
     }
-  };
+  }
 
-  const handleUpload = async (e) => {
+  function handleUpload(e) {
     e.preventDefault();
     if (!selectedType || !selectedFile) { setError('Please select document type and file'); return; }
     setUploading(true); setError(''); setSuccess(''); setVerificationResult(null);
 
-    const formData = new FormData();
+    var formData = new FormData();
     formData.append('file', selectedFile);
     formData.append('document_type', selectedType);
     formData.append('user_id', user.id);
 
-    try {
-      const response = await axios.post(`${API}/documents/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      if (response.data.success) {
-        setSuccess('Document uploaded successfully! Ready for DigiLocker verification.');
-        setDocuments([response.data.document, ...documents]);
-        setSelectedFile(null);
-        setSelectedType('');
-        document.getElementById('file-input').value = '';
-      }
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Upload failed');
-    } finally { setUploading(false); }
-  };
+    axios.post(API + '/documents/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      .then(function(response) {
+        if (response.data.success) {
+          setSuccess('Document uploaded! Click "Run Verification" to verify contents.');
+          setDocuments([response.data.document].concat(documents));
+          setSelectedFile(null);
+          setSelectedType('');
+          var fi = document.getElementById('file-input');
+          if (fi) fi.value = '';
+        }
+      })
+      .catch(function(err) { setError(err.response && err.response.data ? err.response.data.detail : 'Upload failed'); })
+      .finally(function() { setUploading(false); });
+  }
 
-  const handleVerify = async (docId) => {
+  function handleVerify(docId) {
     setVerifying(docId); setVerificationResult(null); setError(''); setSuccess('');
-    // Simulate DigiLocker API delay
-    await new Promise(r => setTimeout(r, 1500));
-    try {
-      const res = await axios.post(`${API}/documents/verify/${docId}`);
-      if (res.data.success) {
-        setVerificationResult(res.data);
-        fetchDocuments();
-      }
-    } catch (err) {
-      setError('Verification service unavailable');
-    } finally { setVerifying(null); }
-  };
+    setTimeout(function() {
+      axios.post(API + '/documents/verify/' + docId)
+        .then(function(res) {
+          if (res.data.success) {
+            setVerificationResult(res.data);
+            fetchDocuments();
+          }
+        })
+        .catch(function() { setError('Verification service unavailable'); })
+        .finally(function() { setVerifying(null); });
+    }, 2000);
+  }
 
-  const getStatusBadge = (status) => {
+  function getStatusBadge(status) {
     if (status === 'verified') return (
       <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
         <CheckCircle className="h-3.5 w-3.5" /> Verified
@@ -101,20 +112,25 @@ function Documents({ user, onLogout }) {
         <Clock className="h-3.5 w-3.5" /> Pending
       </span>
     );
-  };
+  }
 
-  // Extract percentage from ocr_result string
-  const getExtractedPercentage = (ocrResult) => {
-    if (!ocrResult) return null;
-    const match = ocrResult.match(/Extracted Percentage:\s*([0-9.]+)%/i);
-    return match ? match[1] : null;
-  };
+  function extractPercent(ocr) {
+    if (!ocr) return null;
+    var m = ocr.match(/Extracted Percentage:\s*([0-9.]+)%/i);
+    return m ? m[1] : null;
+  }
 
-  const selectedTypeInfo = DOCUMENT_TYPES.find(d => d.value === selectedType);
+  function extractField(ocr, field) {
+    if (!ocr) return null;
+    if (field === 'aadhaar') { var m = ocr.match(/Aadhaar:\s*(XXXX-XXXX-\d{4})/i); return m ? m[1] : null; }
+    if (field === 'income') { var m = ocr.match(/Income:\s*([\S]+)/i); return m ? m[1] : null; }
+    if (field === 'category') { var m = ocr.match(/Category:\s*([A-Z]+)/i); return m ? m[1] : null; }
+    if (field === 'board') { var m = ocr.match(/Board:\s*([A-Z\s]+)/i); return m ? m[1].trim() : null; }
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-      {/* Tricolor Accent Bar */}
       <div className="h-2 w-full flex fixed top-0 z-50">
         <div className="flex-1 bg-orange-500"></div>
         <div className="flex-1 bg-white"></div>
@@ -124,8 +140,8 @@ function Documents({ user, onLogout }) {
       <header className="bg-white border-b border-slate-200 mt-2 sticky top-2 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <button onClick={() => navigate('/dashboard')} className="text-slate-500 hover:text-blue-600 mr-2 font-medium transition-colors">
-              ← {t('back', lang)}
+            <button onClick={function() { navigate('/dashboard'); }} className="text-slate-500 hover:text-blue-600 mr-2 font-medium transition-colors">
+              Back
             </button>
             <div className="bg-emerald-600 p-2.5 rounded-xl shadow-md">
               <Shield className="h-5 w-5 text-white" />
@@ -136,24 +152,21 @@ function Documents({ user, onLogout }) {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* DigiLocker Info Banner */}
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="bg-blue-100 p-3 rounded-full mt-0.5">
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-blue-900 font-bold mb-1 text-lg">DigiLocker Document Verification Simulation</h3>
+              <h3 className="text-blue-900 font-bold mb-1 text-lg">DigiLocker Content Verification</h3>
               <p className="text-blue-800 text-sm font-medium">
-                Documents are verified securely. For marksheets, the system will instantly extract your percentage.
-                <strong className="text-blue-900 bg-blue-100 px-1 rounded mx-1">Only valid documents matching the selected type will be approved.</strong>
+                Documents are verified by analyzing their actual content, not just filenames. Upload a real PDF for best results.
               </p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Upload Card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
             <h3 className="text-slate-800 font-extrabold mb-5 flex items-center gap-2 text-lg">
               <Upload className="h-5 w-5 text-blue-500" /> Upload New Document
@@ -177,56 +190,26 @@ function Documents({ user, onLogout }) {
                 </div>
               )}
 
-              {/* Verification Result Detail */}
               {verificationResult && (
-                <div className={`rounded-xl p-5 border ${verificationResult.is_verified ? 'bg-emerald-50 border-emerald-200 shadow-sm' : 'bg-red-50 border-red-200 shadow-sm'}`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield className={`h-5 w-5 ${verificationResult.is_verified ? 'text-emerald-600' : 'text-red-600'}`} />
-                    <span className={`font-bold text-sm uppercase tracking-wide ${verificationResult.is_verified ? 'text-emerald-800' : 'text-red-800'}`}>
-                      Verification Status: {verificationResult.digilocker_status}
-                    </span>
-                  </div>
-                  
-                  {verificationResult.is_verified && getExtractedPercentage(verificationResult.ocr_result) && (
-                     <div className="mt-3 bg-white p-3 rounded-lg border border-emerald-100 flex items-center gap-3">
-                        <Award className="h-5 w-5 text-emerald-500" />
-                        <div>
-                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Extracted Marks</p>
-                          <p className="text-lg font-black text-emerald-700">{getExtractedPercentage(verificationResult.ocr_result)}%</p>
-                        </div>
-                     </div>
-                  )}
-
-                  <div className="flex items-center gap-4 mt-4">
-                    <div className="flex-1 bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                      <div className={`h-2.5 rounded-full ${verificationResult.is_verified ? 'bg-emerald-500' : 'bg-red-500'}`}
-                        style={{ width: `${verificationResult.confidence}%` }}></div>
-                    </div>
-                    <span className="text-slate-700 text-xs font-bold">{verificationResult.confidence}% Match</span>
-                  </div>
-                </div>
+                <VerificationResultDisplay result={verificationResult} />
               )}
 
               <div className="space-y-1.5">
                 <label className="text-slate-700 text-sm font-bold">Document Type</label>
-                <select value={selectedType} onChange={(e) => { setSelectedType(e.target.value); setVerificationResult(null); }}
+                <select value={selectedType} onChange={function(e) { setSelectedType(e.target.value); setVerificationResult(null); }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
                   <option value="">Select document type...</option>
-                  {DOCUMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  {DOC_TYPES.map(function(dt) { return <option key={dt.value} value={dt.value}>{dt.label}</option>; })}
                 </select>
               </div>
 
-              {/* Naming Guide */}
-              {selectedTypeInfo && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              {selectedType && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+                    <Shield className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-amber-800 text-sm font-bold mb-1">Upload Instruction:</p>
-                      <p className="text-amber-700 text-sm mb-2 leading-relaxed">{selectedTypeInfo.naming}</p>
-                      <p className="text-amber-600 outline outline-1 outline-amber-200 bg-white px-2 py-1 rounded text-xs font-mono inline-block shadow-sm">
-                        eg: {selectedType === 'aadhar' ? 'my_aadhaar_card.pdf' : selectedType === '12th_marksheet' ? '12th_marksheet_result.pdf' : selectedType === '10th_marksheet' ? '10th_ssc_marksheet.pdf' : selectedType + '_doc.pdf'}
-                      </p>
+                      <p className="text-slate-700 text-sm font-bold mb-1">Content Verification Active</p>
+                      <p className="text-slate-600 text-xs leading-relaxed">{DOC_HINTS[selectedType] || ''}</p>
                     </div>
                   </div>
                 </div>
@@ -238,7 +221,7 @@ function Documents({ user, onLogout }) {
                   Select File to Upload
                   <input id="file-input" type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileChange} className="hidden" />
                 </label>
-                <p className="text-xs text-slate-500 mt-2 font-medium">Max 5MB (PDF, JPG, PNG)</p>
+                <p className="text-xs text-slate-500 mt-2 font-medium">Max 5MB (PDF, JPG, PNG). PDF recommended for best verification</p>
                 {selectedFile && <div className="mt-3 inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold"><CheckCircle className="h-4 w-4"/> {selectedFile.name}</div>}
               </div>
 
@@ -249,7 +232,6 @@ function Documents({ user, onLogout }) {
             </form>
           </div>
 
-          {/* Document List Card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
             <h3 className="text-slate-800 font-extrabold mb-5 flex items-center gap-2 text-lg">
               <FileText className="h-5 w-5 text-emerald-500" /> Your Uploaded Documents
@@ -263,50 +245,158 @@ function Documents({ user, onLogout }) {
               </div>
             ) : (
               <div className="space-y-4">
-                {documents.map((doc) => (
-                  <div key={doc.id} className={`rounded-xl p-4 border transition-shadow hover:shadow-md ${
-                      doc.verification_status === 'verified' ? 'bg-emerald-50/50 border-emerald-100' :
-                      doc.verification_status === 'rejected' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200'}`}>
-                    
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="text-slate-800 font-bold text-sm flex items-center gap-1.5">
-                          {DOCUMENT_TYPES.find(d => d.value === doc.document_type)?.label || doc.document_type}
-                          {doc.verification_status === 'verified' && getExtractedPercentage(doc.ocr_result) && (
-                            <span className="bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">
-                              {getExtractedPercentage(doc.ocr_result)}%
-                            </span>
-                          )}
-                        </h4>
-                        <p className="text-slate-500 text-xs mt-1 truncate max-w-[220px] font-medium">{doc.file_name}</p>
-                      </div>
-                      {getStatusBadge(doc.verification_status)}
-                    </div>
+                {documents.map(function(doc) {
+                  var pct = extractPercent(doc.ocr_result);
+                  var aadhaar = extractField(doc.ocr_result, 'aadhaar');
+                  var income = extractField(doc.ocr_result, 'income');
+                  var category = extractField(doc.ocr_result, 'category');
+                  var board = extractField(doc.ocr_result, 'board');
+                  var typeLabel = '';
+                  for (var i = 0; i < DOC_TYPES.length; i++) {
+                    if (DOC_TYPES[i].value === doc.document_type) { typeLabel = DOC_TYPES[i].label; break; }
+                  }
 
-                    {doc.ocr_result && doc.verification_status === 'rejected' && (
-                      <div className="bg-red-50 border border-red-100 rounded-lg p-3 mb-3">
-                        <p className="text-red-700 text-xs font-semibold leading-relaxed">{doc.ocr_result}</p>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
-                      <span className="text-xs text-slate-400 font-medium">Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                  return (
+                    <div key={doc.id} className={'rounded-xl p-4 border transition-shadow hover:shadow-md ' + (
+                        doc.verification_status === 'verified' ? 'bg-emerald-50/50 border-emerald-100' :
+                        doc.verification_status === 'rejected' ? 'bg-red-50/50 border-red-100' : 'bg-white border-slate-200')}>
                       
-                      {doc.verification_status === 'pending' && (
-                        <button onClick={() => handleVerify(doc.id)} disabled={verifying === doc.id}
-                          className="text-xs px-4 py-2 bg-slate-800 text-white shadow-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 font-bold transition-colors">
-                          <Play className="h-3 w-3" />
-                          {verifying === doc.id ? 'Processing...' : 'Run Verification'}
-                        </button>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="text-slate-800 font-bold text-sm flex items-center gap-1.5">
+                            {typeLabel || doc.document_type}
+                            {pct && doc.verification_status === 'verified' && (
+                              <span className="bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">
+                                {pct}%
+                              </span>
+                            )}
+                          </h4>
+                          <p className="text-slate-500 text-xs mt-1 truncate max-w-[220px] font-medium">{doc.file_name}</p>
+                        </div>
+                        {getStatusBadge(doc.verification_status)}
+                      </div>
+
+                      {doc.verification_status === 'verified' && doc.ocr_result && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {aadhaar && <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full border border-violet-200">ID: {aadhaar}</span>}
+                          {income && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">Income: {income}</span>}
+                          {category && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">Category: {category}</span>}
+                          {board && <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">Board: {board}</span>}
+                        </div>
                       )}
+
+                      {doc.ocr_result && doc.verification_status === 'rejected' && (
+                        <div className="bg-red-50 border border-red-100 rounded-lg p-3 mb-3">
+                          <p className="text-red-700 text-xs font-semibold leading-relaxed">{doc.ocr_result}</p>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                        <span className="text-xs text-slate-400 font-medium">Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                        
+                        {doc.verification_status === 'pending' && (
+                          <button onClick={function() { handleVerify(doc.id); }} disabled={verifying === doc.id}
+                            className="text-xs px-4 py-2 bg-slate-800 text-white shadow-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 font-bold transition-colors">
+                            <Play className="h-3 w-3" />
+                            {verifying === doc.id ? 'Analyzing Content...' : 'Run Verification'}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function VerificationResultDisplay(props) {
+  var result = props.result;
+  var isOk = result.is_verified;
+  var patterns = result.matchedPatterns || [];
+  var data = result.extractedData || {};
+
+  return (
+    <div className={'rounded-xl p-5 border ' + (isOk ? 'bg-emerald-50 border-emerald-200 shadow-sm' : 'bg-red-50 border-red-200 shadow-sm')}>
+      <div className="flex items-center gap-2 mb-3">
+        <Shield className={'h-5 w-5 ' + (isOk ? 'text-emerald-600' : 'text-red-600')} />
+        <span className={'font-bold text-sm uppercase tracking-wide ' + (isOk ? 'text-emerald-800' : 'text-red-800')}>
+          {result.digilocker_status}
+        </span>
+      </div>
+
+      {patterns.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1.5">Content Checks Passed</p>
+          <div className="flex flex-wrap gap-1.5">
+            {patterns.map(function(p, i) {
+              return <span key={i} className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">{'OK: ' + p}</span>;
+            })}
+          </div>
+        </div>
+      )}
+
+      {Object.keys(data).length > 0 && (
+        <div className="grid grid-cols-2 gap-2 mt-3">
+          {data.percentage && (
+            <div className="bg-white p-3 rounded-lg border border-emerald-100 flex items-center gap-2">
+              <Award className="h-4 w-4 text-emerald-500" />
+              <div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase">Marks</p>
+                <p className="text-sm font-black text-emerald-700">{data.percentage}%</p>
+              </div>
+            </div>
+          )}
+          {data.board && (
+            <div className="bg-white p-3 rounded-lg border border-emerald-100 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase">Board</p>
+                <p className="text-sm font-black text-blue-700">{data.board}</p>
+              </div>
+            </div>
+          )}
+          {data.uid_last4 && (
+            <div className="bg-white p-3 rounded-lg border border-emerald-100 flex items-center gap-2">
+              <Shield className="h-4 w-4 text-violet-500" />
+              <div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase">Aadhaar</p>
+                <p className="text-sm font-black text-violet-700">{data.uid_last4}</p>
+              </div>
+            </div>
+          )}
+          {data.income_amount && (
+            <div className="bg-white p-3 rounded-lg border border-emerald-100 flex items-center gap-2">
+              <Award className="h-4 w-4 text-amber-500" />
+              <div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase">Income</p>
+                <p className="text-sm font-black text-amber-700">{data.income_amount}</p>
+              </div>
+            </div>
+          )}
+          {data.category && (
+            <div className="bg-white p-3 rounded-lg border border-emerald-100 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-indigo-500" />
+              <div>
+                <p className="text-[10px] text-slate-500 font-bold uppercase">Category</p>
+                <p className="text-sm font-black text-indigo-700">{data.category}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      <div className="flex items-center gap-4 mt-4">
+        <div className="flex-1 bg-slate-200 rounded-full h-2.5 overflow-hidden">
+          <div className={'h-2.5 rounded-full ' + (isOk ? 'bg-emerald-500' : 'bg-red-500')}
+            style={{ width: result.confidence + '%' }}></div>
+        </div>
+        <span className="text-slate-700 text-xs font-bold">{result.confidence}% Match</span>
+      </div>
     </div>
   );
 }

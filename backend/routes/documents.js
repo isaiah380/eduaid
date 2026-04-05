@@ -86,10 +86,10 @@ function verifyDocument(fileName, fileSize, mimeType, documentType) {
 
   // 3. File name analysis — KEY VERIFICATION STEP
   const fileNameLower = fileName.toLowerCase().replace(/[_\-\.]/g, ' ');
-  
+
   // Check if filename contains ANY relevant keyword for the document type
   const matchedKeywords = rules.requiredKeywords.filter(kw => fileNameLower.includes(kw.toLowerCase()));
-  
+
   if (matchedKeywords.length === 0) {
     // STRICT: No matching keywords found — the file does NOT appear to be the right document
     errors.push(
@@ -104,7 +104,7 @@ function verifyDocument(fileName, fileSize, mimeType, documentType) {
   // 4. Cross-type contamination check — reject if file seems to be a DIFFERENT document type
   const otherTypes = Object.entries(DOCUMENT_RULES).filter(([key]) => key !== documentType);
   for (const [otherKey, otherRules] of otherTypes) {
-    const otherMatches = otherRules.requiredKeywords.filter(kw => 
+    const otherMatches = otherRules.requiredKeywords.filter(kw =>
       fileNameLower.includes(kw.toLowerCase()) && !rules.requiredKeywords.includes(kw)
     );
     if (otherMatches.length >= 2 && matchedKeywords.length === 0) {

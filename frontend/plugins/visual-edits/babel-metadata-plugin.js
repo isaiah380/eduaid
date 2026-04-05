@@ -348,6 +348,8 @@ function usageIsCompositePortal({
 // Babel plugin for JSX transformation - adds metadata to all elements
 const babelMetadataPlugin = ({ types: t }) => {
   const fileNameCache = new Map();
+  let _analysisDepth = 0;
+  const MAX_ANALYSIS_DEPTH = 20;
 
   const ARRAY_METHODS = new Set([
     "map",
@@ -610,6 +612,8 @@ const babelMetadataPlugin = ({ types: t }) => {
    * Analyzes a member expression like item.name or obj.prop.value
    */
   function analyzeMemberExpression(exprPath, state) {
+    if (++_analysisDepth > MAX_ANALYSIS_DEPTH) { _analysisDepth--; return { type: "unknown", isEditable: false }; }
+    try {
     const node = exprPath.node;
 
     // Build the property path (e.g., "name" or "address.city")
@@ -655,6 +659,7 @@ const babelMetadataPlugin = ({ types: t }) => {
     }
 
     return { type: "unknown", path: propPath, isEditable: false };
+    } finally { _analysisDepth--; }
   }
 
   /**
@@ -910,6 +915,8 @@ const babelMetadataPlugin = ({ types: t }) => {
    * Detects if we're inside an array iteration (.map(), etc.) and extracts context
    */
   function getArrayIterationContext(exprPath, state) {
+    if (++_analysisDepth > MAX_ANALYSIS_DEPTH) { _analysisDepth--; return null; }
+    try {
     // Find the parent .map() or similar call
     const callExprParent = exprPath.findParent((p) => {
       if (!p.isCallExpression()) return false;
@@ -993,6 +1000,7 @@ const babelMetadataPlugin = ({ types: t }) => {
       indexParam,
       isEditable,
     };
+    } finally { _analysisDepth--; }
   }
 
   /**
