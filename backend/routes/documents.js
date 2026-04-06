@@ -3,6 +3,9 @@ import db from "../db.js";
 import { v4 as uuidv4 } from "uuid";
 import { upload } from "../middleware/upload.js";
 import fs from "fs";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 const router = express.Router();
 
@@ -52,7 +55,7 @@ const DOCUMENT_RULES = {
 };
 
 // ==================== DigiLocker-style Verification Logic ====================
-function verifyDocument(fileName, fileSize, mimeType, documentType) {
+function verifyDocument(fileName, fileSize, mimeType, documentType, pdfText) {
   const rules = DOCUMENT_RULES[documentType];
   if (!rules) {
     return {
@@ -140,21 +143,57 @@ function verifyDocument(fileName, fileSize, mimeType, documentType) {
 
   let finalReason = `${rules.label} verified successfully via DigiLocker. Matched keywords: ${matchedKeywords.join(', ')}.`;
 
-  // Simulated OCR: Extract percentage if it's a marksheet
+  // Simulated OCR & Real OCR combo: Extract percentage if it's a marksheet
   if (['10th_marksheet', '12th_marksheet'].includes(documentType)) {
     let extractedPercentage = 0;
-    // Check if filename contains a 2 digit number that could be a percentage
-    const numberMatch = fileNameLower.match(/(?:[^0-9]|^)([6-9][0-9])(?:[^0-9]|$)/);
-    if (numberMatch && numberMatch[1]) {
-      extractedPercentage = parseFloat(numberMatch[1]) + (Math.floor(Math.random() * 9) / 10);
-    } else {
-      // Default random realistic percentage between 65.0% and 95.9%
-      extractedPercentage = 65 + Math.floor(Math.random() * 30) + (Math.floor(Math.random() * 9) / 10);
+    let foundRealPct = false;
+
+    // 1. First try to find a percentage in the Real PDF text if available
+    if (pdfText) {
+      // Look for explicit tags like "Percentage: 85", "Total marks 92.5", or "85.4%"
+      // This smart regex allows up to 15 characters between the keyword and the number
+      const kwMatch = pdfText.match(/(?:percentage|percent|overall|aggregate|total)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
+      const pctSymbolMatch = pdfText.match(/([0-9]{2,3}(?:\.[0-9]+)?)\s*%/i);
+
+      let rawVal = null;
+      if (kwMatch && kwMatch[1]) {
+        rawVal = parseFloat(kwMatch[1]);
+      } else if (pctSymbolMatch && pctSymbolMatch[1]) {
+        rawVal = parseFloat(pctSymbolMatch[1]);
+      }
+
+      if (rawVal !== null && rawVal > 0 && rawVal <= 100) {
+        extractedPercentage = rawVal;
+        foundRealPct = true;
+      }
+    }
+
+    if (!foundRealPct) {
+      // 2. Next try filename convention
+      const numberMatch = fileNameLower.match(/(?:[^0-9]|^)([6-9][0-9])(?:[^0-9]|$)/);
+      if (numberMatch && numberMatch[1]) {
+        extractedPercentage = parseFloat(numberMatch[1]) + (Math.floor(Math.random() * 9) / 10);
+      } else {
+        // 3. Fallback default
+        extractedPercentage = 65 + Math.floor(Math.random() * 30) + (Math.floor(Math.random() * 9) / 10);
+      }
     }
     extractedPercentage = extractedPercentage.toFixed(1);
     finalReason += ` Extracted Percentage: ${extractedPercentage}%`;
+
+    // Also simulate DOB extraction from 10th/12th marksheet
+    let age = 18; // Default student age
+    const ageMatch = fileNameLower.match(/age\s*(\d{2})/);
+    if (ageMatch && ageMatch[1]) {
+      age = parseInt(ageMatch[1]);
+    } else if (fileNameLower.includes('old') || fileNameLower.includes('adult')) {
+      age = 45; // Test simulated older profile
+    }
+    const currentYear = new Date().getFullYear();
+    const dobYear = currentYear - age;
+    finalReason += ` | DOB: 01/01/${dobYear} | Age: ${age}`;
   }
-  
+
   if (documentType === 'aadhar') {
     let age = 20; // default young student
     const ageMatch = fileNameLower.match(/age\s*(\d{2})/);
@@ -163,7 +202,7 @@ function verifyDocument(fileName, fileSize, mimeType, documentType) {
     } else if (fileNameLower.includes('old') || fileNameLower.includes('adult')) {
       age = 45; // Test simulated older profile
     }
-    
+
     // Calculate a DOB year from the age
     const currentYear = new Date().getFullYear();
     const dobYear = currentYear - age;
@@ -230,7 +269,7 @@ router.delete("/documents/:id", (req, res) => {
   try {
     const docId = req.params.id;
     const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(docId);
-    
+
     if (!doc) {
       return res.status(404).json({ success: false, detail: "Document not found" });
     }
@@ -255,7 +294,7 @@ router.delete("/documents/:id", (req, res) => {
 });
 
 // ==================== VERIFY DOCUMENT (DigiLocker-style) ====================
-router.post("/documents/verify/:id", (req, res) => {
+router.post("/documents/verify/:id", async (req, res) => {
   try {
     const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id);
     if (!doc) {
@@ -276,8 +315,20 @@ router.post("/documents/verify/:id", (req, res) => {
     const mimeMap = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
     const mimeType = mimeMap[ext] || 'unknown';
 
+    // Attempt real OCR if it's a PDF
+    let pdfText = '';
+    if (mimeType === 'application/pdf' && fs.existsSync(doc.file_path)) {
+      try {
+        const dataBuffer = fs.readFileSync(doc.file_path);
+        const pdfData = await pdfParse(dataBuffer);
+        pdfText = pdfData.text;
+      } catch (e) {
+        console.error("PDF parse failed:", e);
+      }
+    }
+
     // Run DigiLocker verification
-    const result = verifyDocument(doc.file_name, fileSize, mimeType, doc.document_type);
+    const result = verifyDocument(doc.file_name, fileSize, mimeType, doc.document_type, pdfText);
 
     // Update database
     db.prepare("UPDATE documents SET verification_status = ?, is_verified = ?, ocr_result = ? WHERE id = ?")

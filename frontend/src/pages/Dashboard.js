@@ -66,7 +66,14 @@ function Dashboard({ user, onLogout }) {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-800 tracking-tight">{t('scholarship_portal', lang)}</h1>
-                <p className="text-sm font-medium text-slate-500">{t('welcome', lang)}, <span className="text-blue-600 font-bold">{user?.full_name}</span>!</p>
+                <p className="text-sm font-medium text-slate-500">
+                  {t('welcome', lang)}, <span className="text-blue-600 font-bold">{user?.full_name}</span>!
+                  {user?.dob && (
+                    <span className="ml-2 bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-bold uppercase border border-emerald-200">
+                      Age: {new Date().getFullYear() - new Date(user.dob).getFullYear()}
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
             <button onClick={handleLogout} className="text-slate-600 font-bold hover:bg-slate-100 flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border border-slate-200 shadow-sm">
@@ -79,10 +86,9 @@ function Dashboard({ user, onLogout }) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           {[
             { label: t('total_scholarships', lang), value: stats.total_scholarships, icon: Award, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-            { label: t('applied', lang), value: applications.length, icon: Briefcase, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
             { label: t('verified_docs', lang), value: `${verifiedDocs}/${documents.length}`, icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
             { label: t('pending', lang), value: documents.filter(d => d.verification_status === 'pending').length, icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' },
           ].map((stat, i) => (

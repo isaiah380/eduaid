@@ -308,7 +308,7 @@ function Scholarships({ user, onLogout }) {
                       {s.deadline ? `Due ${new Date(s.deadline).toLocaleDateString()}` : 'No Deadline'}
                     </div>
                     <button onClick={(e) => { e.stopPropagation(); setSelected(s); }} className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
-                      {t('apply_now', lang)}
+                      View Details
                     </button>
                   </div>
                 </div>
@@ -395,28 +395,12 @@ function Scholarships({ user, onLogout }) {
               </div>
 
               <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3 flex-wrap">
-                {selected.link && (
-                  <a href={selected.link} target="_blank" rel="noopener noreferrer" className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-sm tracking-wide uppercase hover:bg-slate-200 transition-colors flex items-center gap-2 border border-slate-200">
-                    Official Portal <ExternalLink className="h-4 w-4" />
-                  </a>
-                )}
-                {appliedIds.has(selected._id || selected.id) ? (
-                  <button disabled className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-sm tracking-widest uppercase border border-emerald-200 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4" /> Already Applied
-                  </button>
-                ) : isExpired(selected.deadline) ? (
-                  <button disabled className="px-6 py-2.5 bg-red-100 text-red-800 rounded-xl font-black text-sm tracking-widest uppercase border border-red-200 flex items-center gap-2">
-                    <XCircle className="h-4 w-4" /> Deadline Passed
-                  </button>
-                ) : (elig && !elig.eligible) ? (
-                  <button disabled className="px-6 py-2.5 bg-red-100 text-red-800 rounded-xl font-black text-sm tracking-widest uppercase border border-red-200 flex items-center gap-2">
-                    <XCircle className="h-4 w-4" /> Not Eligible
-                  </button>
-                ) : (
-                  <button onClick={() => handleApply(selected)} disabled={applying} className="px-6 py-2.5 bg-blue-600 text-white shadow-md rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2">
-                    {applying ? "Processing..." : "Apply Instantly"}
-                  </button>
-                )}
+                <button onClick={() => setSelected(null)} className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-black text-sm tracking-widest uppercase hover:bg-slate-200 transition-colors flex items-center gap-2 border border-slate-200">
+                  Close
+                </button>
+                <a href={selected.link || 'https://scholarships.gov.in'} target="_blank" rel="noopener noreferrer" className="px-6 py-2.5 bg-blue-600 text-white shadow-md rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-700 transition-colors flex items-center gap-2">
+                  Continue to Portal <ExternalLink className="h-4 w-4" />
+                </a>
               </div>
             </div>
           </div>

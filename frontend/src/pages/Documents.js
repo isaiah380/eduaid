@@ -105,6 +105,7 @@ function Documents(props) {
         if (res.data.success) {
           setSuccess('Document deleted successfully');
           setDocuments(documents.filter(function(d) { return d.id !== docId; }));
+          setVerificationResult(null); // Clear the verified message
         }
       })
       .catch(function(err) { setError('Failed to delete document'); });
@@ -265,7 +266,6 @@ function Documents(props) {
                   var aadhaar = extractField(doc.ocr_result, 'aadhaar');
                   var income = extractField(doc.ocr_result, 'income');
                   var category = extractField(doc.ocr_result, 'category');
-                  var age = extractField(doc.ocr_result, 'age');
                   var board = extractField(doc.ocr_result, 'board');
                   var typeLabel = '';
                   for (var i = 0; i < DOC_TYPES.length; i++) {
@@ -297,7 +297,6 @@ function Documents(props) {
                           {aadhaar && <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full border border-violet-200">ID: {aadhaar}</span>}
                           {income && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">Income: {income}</span>}
                           {category && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">Category: {category}</span>}
-                          {age && <span className="text-[10px] font-bold bg-pink-50 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">Age: {age}</span>}
                           {board && <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">Board: {board}</span>}
                         </div>
                       )}

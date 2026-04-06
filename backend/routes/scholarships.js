@@ -87,6 +87,9 @@ router.delete("/scholarships/:id", (req, res) => {
 // ==================== CHECK ELIGIBILITY BASED ON VERIFIED DOCUMENTS ====================
 router.get("/scholarships/eligible/:userId", (req, res) => {
   try {
+    // Get user details for base DOB
+    const user = db.prepare("SELECT * FROM users WHERE id = ?").get(req.params.userId);
+
     // Get all verified documents for this user
     const verifiedDocs = db.prepare(
       "SELECT * FROM documents WHERE user_id = ? AND verification_status = 'verified'"
@@ -106,6 +109,14 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
       percentage12th: null,
       verifiedDocTypes: []
     };
+
+    // 1. Base age on registered DOB if available
+    if (user && user.dob) {
+      const birthYear = new Date(user.dob).getFullYear();
+      if (!isNaN(birthYear)) {
+        profile.age = new Date().getFullYear() - birthYear;
+      }
+    }
 
     for (const doc of verifiedDocs) {
       profile.verifiedDocTypes.push(doc.document_type);
@@ -130,11 +141,15 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
         profile.has10thMarksheet = true;
         const pctMatch = ocr.match(/Extracted Percentage:\s*([0-9.]+)%/i);
         if (pctMatch) profile.percentage10th = parseFloat(pctMatch[1]);
+        const ageMatch = ocr.match(/Age:\s*(\d+)/i);
+        if (ageMatch && !profile.age) profile.age = parseInt(ageMatch[1]);
       }
       if (doc.document_type === '12th_marksheet') {
         profile.has12thMarksheet = true;
         const pctMatch = ocr.match(/Extracted Percentage:\s*([0-9.]+)%/i);
         if (pctMatch) profile.percentage12th = parseFloat(pctMatch[1]);
+        const ageMatch = ocr.match(/Age:\s*(\d+)/i);
+        if (ageMatch && !profile.age) profile.age = parseInt(ageMatch[1]);
       }
     }
 

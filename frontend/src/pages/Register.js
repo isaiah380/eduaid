@@ -146,8 +146,13 @@ function Register({ onLogin }) {
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-bold text-xs uppercase tracking-wider pl-1"><Calendar className="inline h-3.5 w-3.5 mr-1 text-slate-500" />Date of Birth</Label>
                     <Input type="date" value={formData.dob}
-                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, dob: e.target.value })} required
                       className="bg-white font-medium border-slate-300 text-slate-900 focus:border-blue-500 focus:ring-blue-500 py-6" />
+                    {formData.dob && (
+                      <p className={`text-[10px] font-bold uppercase pl-1 tracking-wider ${new Date().getFullYear() - new Date(formData.dob).getFullYear() > 40 ? 'text-red-500' : 'text-emerald-500'}`}>
+                        Calculated Age: {new Date().getFullYear() - new Date(formData.dob).getFullYear()} Years
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-slate-700 font-bold text-xs uppercase tracking-wider pl-1"><Calendar className="inline h-3.5 w-3.5 mr-1 text-slate-500" />12th Exam Date</Label>

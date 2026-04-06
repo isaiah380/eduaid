@@ -146,6 +146,22 @@ router.post("/auth/register", async (req, res) => {
       }
     }
 
+    // Age calculation and verification from DOB
+    let calculatedAge = null;
+    if (dob) {
+      const birthYear = new Date(dob).getFullYear();
+      const currentYear = new Date().getFullYear();
+      calculatedAge = currentYear - birthYear;
+      
+      // Verification rule: reject if age is > 40
+      if (calculatedAge > 40) {
+        return res.status(400).json({
+          success: false,
+          detail: `Age verification failed. You are ${calculatedAge} years old. The portal is restricted to users 40 years old or younger.`
+        });
+      }
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
