@@ -152,11 +152,19 @@ function verifyDocument(fileName, fileSize, mimeType, documentType, pdfText) {
     if (pdfText) {
       // Look for explicit tags like "Percentage: 85", "Total marks 92.5", or "85.4%"
       // This smart regex allows up to 15 characters between the keyword and the number
-      const kwMatch = pdfText.match(/(?:percentage|percent|overall|aggregate|total)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
+      const kwMatch = pdfText.match(/(?:percentage|percent)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
       const pctSymbolMatch = pdfText.match(/([0-9]{2,3}(?:\.[0-9]+)?)\s*%/i);
+      const fractionMatch = pdfText.match(/([0-9]{2,4})\s*\/\s*([0-9]{2,4})/);
+      const cgpaMatch = pdfText.match(/(?:cgpa|sgpa|gpa)[\s:a-zA-Z\-]{0,10}?([0-9](?:\.[0-9]+)?)/i);
 
       let rawVal = null;
-      if (kwMatch && kwMatch[1]) {
+      if (fractionMatch && parseFloat(fractionMatch[2]) > 0) {
+        const max = parseFloat(fractionMatch[2]);
+        const obtained = parseFloat(fractionMatch[1]);
+        if (obtained <= max) rawVal = (obtained / max) * 100;
+      } else if (cgpaMatch && parseFloat(cgpaMatch[1]) <= 10) {
+        rawVal = parseFloat(cgpaMatch[1]) * 9.5;
+      } else if (kwMatch && kwMatch[1]) {
         rawVal = parseFloat(kwMatch[1]);
       } else if (pctSymbolMatch && pctSymbolMatch[1]) {
         rawVal = parseFloat(pctSymbolMatch[1]);

@@ -61,6 +61,24 @@ function Scholarships({ user, onLogout }) {
     } catch (err) { console.error(err); }
   };
 
+  // Auto-set community filter from verified caste certificate
+  useEffect(() => {
+    if (userProfile && userProfile.category && !commFilter) {
+      setCommFilter(userProfile.category);
+    }
+  }, [userProfile]);
+
+  // Log scholarship view to backend (deduplicates automatically)
+  const handleSelectScholarship = (scholarship) => {
+    setSelected(scholarship);
+    if (user?.id) {
+      axios.post(`${API}/scholarships/view`, {
+        user_id: user.id,
+        scholarship_id: scholarship._id || scholarship.id
+      }).catch(() => {});
+    }
+  };
+
   useEffect(() => {
     let result = [...scholarships];
     if (searchQuery) result = result.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.description?.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -87,8 +105,21 @@ function Scholarships({ user, onLogout }) {
       const elig = eligibilityMap[s._id || s.id];
       return elig && elig.eligible;
     });
+
+    // Sort by income limit: if user has verified income, show most relevant (closest match) first
+    if (userProfile && userProfile.income) {
+      result.sort((a, b) => {
+        const aLimit = a.income_limit || 999999999;
+        const bLimit = b.income_limit || 999999999;
+        const aMatch = userProfile.income <= aLimit ? 0 : 1;
+        const bMatch = userProfile.income <= bLimit ? 0 : 1;
+        if (aMatch !== bMatch) return aMatch - bMatch; // eligible first
+        return (bLimit || 0) - (aLimit || 0); // higher income limit first among eligible
+      });
+    }
+
     setFiltered(result);
-  }, [searchQuery, eduFilter, commFilter, typeFilter, eligibleOnly, scholarships, eligibilityMap]);
+  }, [searchQuery, eduFilter, commFilter, typeFilter, eligibleOnly, scholarships, eligibilityMap, userProfile]);
 
   const handleApply = async (scholarship) => {
     if (!user?.id) return;
@@ -277,7 +308,7 @@ function Scholarships({ user, onLogout }) {
                   className={`bg-white border rounded-2xl p-6 flex flex-col shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 group cursor-pointer relative ${
                     elig && !elig.eligible ? 'border-red-100 opacity-75' : 'border-slate-200'
                   }`}
-                  onClick={() => setSelected(s)}>
+                  onClick={() => handleSelectScholarship(s)}>
                   <div className="mb-4 flex-1">
                     <div className="flex justify-between items-start mb-3 gap-2">
                       <span className={`px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-md border
@@ -307,7 +338,7 @@ function Scholarships({ user, onLogout }) {
                     <div className="text-xs text-slate-500 font-bold">
                       {s.deadline ? `Due ${new Date(s.deadline).toLocaleDateString()}` : 'No Deadline'}
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); setSelected(s); }} className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+                    <button onClick={(e) => { e.stopPropagation(); handleSelectScholarship(s); }} className="text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
                       View Details
                     </button>
                   </div>

@@ -94,6 +94,16 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (scholarship_id) REFERENCES scholarships(id)
   );
+
+  CREATE TABLE IF NOT EXISTS scholarship_views (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    scholarship_id TEXT NOT NULL,
+    viewed_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (scholarship_id) REFERENCES scholarships(id),
+    UNIQUE(user_id, scholarship_id)
+  );
 `);
 
 // ============== INIT & SEED ==============

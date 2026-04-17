@@ -50,11 +50,19 @@ function App() {
     <div className="App min-h-screen">
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<RoleSelect />} />
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          <Route path="/register" element={<Register onLogin={handleLogin} />} />
-          <Route path="/admin/login" element={<AdminLogin onLogin={handleLogin} />} />
+          {/* Public Routes — redirect to dashboard if already logged in */}
+          <Route path="/" element={
+            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/dashboard" replace />) : <RoleSelect />
+          } />
+          <Route path="/login" element={
+            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/dashboard" replace />) : <Login onLogin={handleLogin} />
+          } />
+          <Route path="/register" element={
+            user ? <Navigate to="/dashboard" replace /> : <Register onLogin={handleLogin} />
+          } />
+          <Route path="/admin/login" element={
+            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/" replace />) : <AdminLogin onLogin={handleLogin} />
+          } />
 
           {/* Post-Login Language Selection */}
           <Route path="/select-language" element={

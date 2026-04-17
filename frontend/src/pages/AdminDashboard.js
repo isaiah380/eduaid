@@ -1,43 +1,63 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award } from "lucide-react";
+import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 const API = `${BACKEND_URL}/api`;
 
 function AdminDashboard({ user, onLogout }) {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ total_scholarships: 0, total_students: 0, total_applications: 0 });
+  const [stats, setStats] = useState({ total_scholarships: 0, total_students: 0, total_applications: 0, total_views: 0 });
   const [scholarships, setScholarships] = useState([]);
-  const [applications, setApplications] = useState([]);
+  const [views, setViews] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [searchQuery, setSearchQuery] = useState("");
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (user?.role !== "ADMIN") navigate("/"); else loadData(); }, [user, navigate]);
 
   const loadData = async () => {
     setLoading(true);
-    try {
-      const [statRes, schRes, appRes] = await Promise.all([
-        axios.get(`${API}/admin/stats`),
-        axios.get(`${API}/scholarships`),
-        axios.get(`${API}/admin/applications`)
-      ]);
-      if (statRes.data.success) setStats(statRes.data);
-      if (schRes.data.success) setScholarships(schRes.data.scholarships);
-      if (appRes.data.success) setApplications(appRes.data.applications);
-    } catch (err) { console.error("Admin load error", err); }
+    await fetchLatest();
     setLoading(false);
   };
 
-  const handleStatusUpdate = async (appId, newStatus) => {
-    if (!window.confirm("Update status to " + newStatus + "?")) return;
+  const fetchLatest = async () => {
     try {
-      const res = await axios.post(`${API}/admin/applications/${appId}/status`, { status: newStatus });
-      if (res.data.success) loadData();
-    } catch (err) { alert("Failed to update status"); }
+      const [statRes, schRes, viewRes, studRes] = await Promise.all([
+        axios.get(`${API}/admin/stats`),
+        axios.get(`${API}/scholarships`),
+        axios.get(`${API}/admin/views`),
+        axios.get(`${API}/applications/admin/students`)
+      ]);
+      if (statRes.data.success) setStats(statRes.data);
+      if (schRes.data.success) setScholarships(schRes.data.scholarships);
+      if (viewRes.data.success) setViews(viewRes.data.views);
+      if (studRes.data.success) setStudents(studRes.data.students);
+    } catch (err) { console.error("Admin load error", err); }
   };
+
+  // Real-time polling: silently refresh data every 5 seconds
+  useEffect(() => {
+    if (user?.role !== "ADMIN") return;
+    const interval = setInterval(() => {
+      fetchLatest();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Filter views by search query
+  const filteredViews = views.filter(v => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (v.student_name || '').toLowerCase().includes(q) ||
+           (v.student_email || '').toLowerCase().includes(q) ||
+           (v.college_name || '').toLowerCase().includes(q) ||
+           (v.scholarship_name || '').toLowerCase().includes(q);
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
@@ -71,9 +91,9 @@ function AdminDashboard({ user, onLogout }) {
         <div className="flex flex-wrap gap-2 mb-8 bg-white p-1.5 rounded-xl w-fit border border-slate-200 shadow-sm">
           {[
             { id: "overview", label: "Overview", icon: Layers },
+            { id: "views", label: "Student Activity", icon: Eye },
             { id: "scholarships", label: "Scholarships", icon: Award },
-            { id: "users", label: "Students", icon: Users },
-            { id: "add", label: "Add New", icon: FileText }
+            { id: "students", label: "Students", icon: Users },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm tracking-wide transition-all ${
@@ -91,7 +111,7 @@ function AdminDashboard({ user, onLogout }) {
             {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="bg-white border text-left rounded-2xl p-6 shadow-sm border-slate-200 relative overflow-hidden">
                      <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-50 rounded-full"></div>
                      <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Total Scholarships</p>
@@ -107,17 +127,118 @@ function AdminDashboard({ user, onLogout }) {
                      <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Total Applications</p>
                      <p className="text-4xl font-black text-indigo-600">{stats.total_applications}</p>
                   </div>
+                  <div className="bg-white border text-left rounded-2xl p-6 shadow-sm border-slate-200 relative overflow-hidden">
+                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-50 rounded-full"></div>
+                     <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Scholarship Views</p>
+                     <p className="text-4xl font-black text-amber-600">{stats.total_views}</p>
+                  </div>
                 </div>
 
-                <div className="bg-white border text-left rounded-2xl p-6 shadow-sm border-slate-200">
+                {/* Recent Student Activity Preview */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <Search className="h-5 w-5 text-indigo-500" /> Track Applications by College
+                    <Eye className="h-5 w-5 text-indigo-500" /> Recent Student Activity
                   </h3>
-                  <div className="flex gap-4">
-                    <input type="text" placeholder="Enter full college name..."
-                      className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 font-medium focus:outline-none focus:border-indigo-500" />
-                    <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold tracking-wide shadow-md hover:bg-indigo-700 transition-colors">Search</button>
+                  {views.length === 0 ? (
+                    <p className="text-slate-400 text-sm font-medium py-8 text-center">No student activity yet. Students will appear here when they view scholarships.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {views.slice(0, 5).map((v, i) => (
+                        <div key={i} className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl p-4 hover:bg-slate-100 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="bg-indigo-100 p-2.5 rounded-lg">
+                              <Users className="h-4 w-4 text-indigo-600" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-800 text-sm">{v.student_name}</p>
+                              <p className="text-xs text-slate-500">{v.student_email} • {v.college_name || 'N/A'}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-indigo-700 truncate max-w-[250px]">{v.scholarship_name}</p>
+                            <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 justify-end">
+                              <Clock className="h-3 w-3" /> {new Date(v.viewed_at).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {views.length > 5 && (
+                    <button onClick={() => setActiveTab("views")} className="mt-4 text-sm text-indigo-600 font-bold hover:underline">
+                      View all {views.length} entries →
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Student Activity Tab (Views) */}
+            {activeTab === "views" && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-indigo-500" /> All Student Scholarship Views
+                      <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{views.length}</span>
+                    </h3>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input type="text" placeholder="Search by name, email, college, scholarship..."
+                        value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium focus:outline-none focus:border-indigo-500 w-full md:w-80" />
+                    </div>
                   </div>
+
+                  {filteredViews.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-50 border border-slate-100 rounded-xl">
+                      <Eye className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                      <p className="text-slate-500 font-bold text-sm">No student activity found</p>
+                      <p className="text-slate-400 text-xs mt-1 font-medium">Students will appear here when they click on scholarships</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            <th className="p-4 pl-6">#</th>
+                            <th className="p-4">Student Name</th>
+                            <th className="p-4">Email</th>
+                            <th className="p-4">Age</th>
+                            <th className="p-4">College</th>
+                            <th className="p-4">Scholarship Viewed</th>
+                            <th className="p-4 text-right pr-6">Viewed At</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredViews.map((v, i) => (
+                            <tr key={v.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors">
+                              <td className="p-4 pl-6 text-slate-400 font-bold text-sm">{i + 1}</td>
+                              <td className="p-4 font-bold text-slate-800 text-sm">{v.student_name}</td>
+                              <td className="p-4 text-slate-600 text-sm font-medium">{v.student_email}</td>
+                              <td className="p-4">
+                                {v.student_age ? (
+                                  <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-black">{v.student_age} yrs</span>
+                                ) : (
+                                  <span className="text-slate-400 text-xs">-</span>
+                                )}
+                              </td>
+                              <td className="p-4 text-slate-600 text-sm font-medium">{v.college_name || '-'}</td>
+                              <td className="p-4">
+                                <span className="text-indigo-700 font-bold text-sm">{v.scholarship_name}</span>
+                                <br />
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{v.scholarship_type}</span>
+                              </td>
+                              <td className="p-4 text-right pr-6 text-slate-500 text-xs font-bold">
+                                {new Date(v.viewed_at).toLocaleDateString()} <br />
+                                <span className="text-slate-400">{new Date(v.viewed_at).toLocaleTimeString()}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -150,12 +271,52 @@ function AdminDashboard({ user, onLogout }) {
               </div>
             )}
 
-            {/* Add placeholder for other tabs */}
-            {(activeTab === "users" || activeTab === "add") && (
-              <div className="bg-white border text-left rounded-2xl p-16 shadow-sm border-slate-200 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-                 <Shield className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                 <h2 className="text-xl font-bold text-slate-700 mb-2">Administrative Console</h2>
-                 <p className="text-slate-500 font-medium">This module is locked for your current demo credential level.</p>
+            {/* Students Tab */}
+            {activeTab === "students" && (
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-6 border-b border-slate-100">
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-emerald-500" /> Registered Students
+                    <span className="bg-emerald-100 text-emerald-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{students.length}</span>
+                  </h3>
+                </div>
+                {students.length === 0 ? (
+                  <div className="text-center py-16">
+                    <Users className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 font-bold">No students registered yet</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                          <th className="p-4 pl-6">#</th>
+                          <th className="p-4">Name</th>
+                          <th className="p-4">Email</th>
+                          <th className="p-4">Phone</th>
+                          <th className="p-4">College</th>
+                          <th className="p-4">Applications</th>
+                          <th className="p-4 text-right pr-6">Registered</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {students.map((s, i) => (
+                          <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td className="p-4 pl-6 text-slate-400 font-bold text-sm">{i + 1}</td>
+                            <td className="p-4 font-bold text-slate-800 text-sm">{s.full_name}</td>
+                            <td className="p-4 text-slate-600 text-sm font-medium">{s.email}</td>
+                            <td className="p-4 text-slate-600 text-sm font-medium">{s.phone}</td>
+                            <td className="p-4 text-slate-600 text-sm font-medium">{s.college_name || '-'}</td>
+                            <td className="p-4">
+                              <span className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-black">{s.total_applications}</span>
+                            </td>
+                            <td className="p-4 text-right pr-6 text-slate-500 text-xs font-bold">{new Date(s.created_at).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </div>
