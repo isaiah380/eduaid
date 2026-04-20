@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock } from "lucide-react";
+import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock, CheckCircle, XCircle, Trash2, Plus, X, Download } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 const API = `${BACKEND_URL}/api`;
@@ -12,9 +12,13 @@ function AdminDashboard({ user, onLogout }) {
   const [scholarships, setScholarships] = useState([]);
   const [views, setViews] = useState([]);
   const [students, setStudents] = useState([]);
+  const [pendingDocs, setPendingDocs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentDetailsLoading, setStudentDetailsLoading] = useState(false);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (user?.role !== "ADMIN") navigate("/"); else loadData(); }, [user, navigate]);
@@ -27,20 +31,21 @@ function AdminDashboard({ user, onLogout }) {
 
   const fetchLatest = async () => {
     try {
-      const [statRes, schRes, viewRes, studRes] = await Promise.all([
+      const [statRes, schRes, viewRes, studRes, docRes] = await Promise.all([
         axios.get(`${API}/admin/stats`),
         axios.get(`${API}/scholarships`),
         axios.get(`${API}/admin/views`),
-        axios.get(`${API}/applications/admin/students`)
+        axios.get(`${API}/applications/admin/students`),
+        axios.get(`${API}/documents/admin/pending`)
       ]);
       if (statRes.data.success) setStats(statRes.data);
       if (schRes.data.success) setScholarships(schRes.data.scholarships);
       if (viewRes.data.success) setViews(viewRes.data.views);
       if (studRes.data.success) setStudents(studRes.data.students);
+      if (docRes.data.success) setPendingDocs(docRes.data.documents);
     } catch (err) { console.error("Admin load error", err); }
   };
 
-  // Real-time polling: silently refresh data every 5 seconds
   useEffect(() => {
     if (user?.role !== "ADMIN") return;
     const interval = setInterval(() => {
@@ -49,7 +54,6 @@ function AdminDashboard({ user, onLogout }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Filter views by search query
   const filteredViews = views.filter(v => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -59,8 +63,35 @@ function AdminDashboard({ user, onLogout }) {
            (v.scholarship_name || '').toLowerCase().includes(q);
   });
 
+  const handleDeleteScholarship = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this scholarship?")) return;
+    try {
+      await axios.delete(`${API}/scholarships/${id}`);
+      fetchLatest();
+    } catch (err) { alert("Failed to delete"); }
+  };
+
+  const handleVerifyDocument = async (id, status) => {
+    if (!window.confirm(`Are you sure you want to ${status} this document?`)) return;
+    try {
+      await axios.post(`${API}/documents/admin/verify/${id}`, { status });
+      fetchLatest();
+    } catch (err) { alert("Failed to update verification status"); }
+  };
+
+  const loadStudentDetails = async (id) => {
+    setStudentDetailsLoading(true);
+    try {
+      const res = await axios.get(`${API}/applications/admin/students/${id}/details`);
+      if (res.data.success) {
+        setSelectedStudent(res.data);
+      }
+    } catch (err) { alert("Failed to load details"); }
+    setStudentDetailsLoading(false);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-slate-50 font-sans flex flex-col relative">
       {/* Tricolor Accent Header Bar */}
       <div className="h-2 w-full flex fixed top-0 z-50">
         <div className="flex-1 bg-orange-500"></div>
@@ -91,20 +122,24 @@ function AdminDashboard({ user, onLogout }) {
         <div className="flex flex-wrap gap-2 mb-8 bg-white p-1.5 rounded-xl w-fit border border-slate-200 shadow-sm">
           {[
             { id: "overview", label: "Overview", icon: Layers },
-            { id: "views", label: "Student Activity", icon: Eye },
-            { id: "scholarships", label: "Scholarships", icon: Award },
             { id: "students", label: "Students", icon: Users },
+            { id: "verifications", label: "Verifications", icon: CheckCircle },
+            { id: "scholarships", label: "Scholarships", icon: Award },
+            { id: "views", label: "Activity", icon: Eye },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm tracking-wide transition-all ${
                 activeTab === tab.id ? "bg-emerald-600 text-white shadow-md" : "text-slate-600 hover:bg-slate-100"
               }`}>
               <tab.icon className="h-4 w-4" /> {tab.label}
+              {tab.id === "verifications" && pendingDocs.length > 0 && (
+                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full ml-1">{pendingDocs.length}</span>
+              )}
             </button>
           ))}
         </div>
 
-        {loading ? (
+        {loading && !students.length ? (
           <div className="flex justify-center py-20"><RefreshCw className="h-8 w-8 text-emerald-500 animate-spin" /></div>
         ) : (
           <div>
@@ -127,20 +162,19 @@ function AdminDashboard({ user, onLogout }) {
                      <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Total Applications</p>
                      <p className="text-4xl font-black text-indigo-600">{stats.total_applications}</p>
                   </div>
-                  <div className="bg-white border text-left rounded-2xl p-6 shadow-sm border-slate-200 relative overflow-hidden">
-                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-50 rounded-full"></div>
-                     <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Scholarship Views</p>
-                     <p className="text-4xl font-black text-amber-600">{stats.total_views}</p>
+                  <div className="bg-white border text-left rounded-2xl p-6 shadow-sm border-slate-200 relative overflow-hidden flex flex-col justify-between">
+                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-red-50 rounded-full"></div>
+                     <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Pending Docs</p>
+                     <p className="text-4xl font-black text-red-500">{pendingDocs.length}</p>
                   </div>
                 </div>
 
-                {/* Recent Student Activity Preview */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                   <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <Eye className="h-5 w-5 text-indigo-500" /> Recent Student Activity
                   </h3>
                   {views.length === 0 ? (
-                    <p className="text-slate-400 text-sm font-medium py-8 text-center">No student activity yet. Students will appear here when they view scholarships.</p>
+                    <p className="text-slate-400 text-sm font-medium py-8 text-center">No student activity yet.</p>
                   ) : (
                     <div className="space-y-3">
                       {views.slice(0, 5).map((v, i) => (
@@ -169,104 +203,6 @@ function AdminDashboard({ user, onLogout }) {
                       View all {views.length} entries →
                     </button>
                   )}
-                </div>
-              </div>
-            )}
-
-            {/* Student Activity Tab (Views) */}
-            {activeTab === "views" && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                      <Eye className="h-5 w-5 text-indigo-500" /> All Student Scholarship Views
-                      <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{views.length}</span>
-                    </h3>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <input type="text" placeholder="Search by name, email, college, scholarship..."
-                        value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium focus:outline-none focus:border-indigo-500 w-full md:w-80" />
-                    </div>
-                  </div>
-
-                  {filteredViews.length === 0 ? (
-                    <div className="text-center py-12 bg-slate-50 border border-slate-100 rounded-xl">
-                      <Eye className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                      <p className="text-slate-500 font-bold text-sm">No student activity found</p>
-                      <p className="text-slate-400 text-xs mt-1 font-medium">Students will appear here when they click on scholarships</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                            <th className="p-4 pl-6">#</th>
-                            <th className="p-4">Student Name</th>
-                            <th className="p-4">Email</th>
-                            <th className="p-4">Age</th>
-                            <th className="p-4">College</th>
-                            <th className="p-4">Scholarship Viewed</th>
-                            <th className="p-4 text-right pr-6">Viewed At</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredViews.map((v, i) => (
-                            <tr key={v.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors">
-                              <td className="p-4 pl-6 text-slate-400 font-bold text-sm">{i + 1}</td>
-                              <td className="p-4 font-bold text-slate-800 text-sm">{v.student_name}</td>
-                              <td className="p-4 text-slate-600 text-sm font-medium">{v.student_email}</td>
-                              <td className="p-4">
-                                {v.student_age ? (
-                                  <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-black">{v.student_age} yrs</span>
-                                ) : (
-                                  <span className="text-slate-400 text-xs">-</span>
-                                )}
-                              </td>
-                              <td className="p-4 text-slate-600 text-sm font-medium">{v.college_name || '-'}</td>
-                              <td className="p-4">
-                                <span className="text-indigo-700 font-bold text-sm">{v.scholarship_name}</span>
-                                <br />
-                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{v.scholarship_type}</span>
-                              </td>
-                              <td className="p-4 text-right pr-6 text-slate-500 text-xs font-bold">
-                                {new Date(v.viewed_at).toLocaleDateString()} <br />
-                                <span className="text-slate-400">{new Date(v.viewed_at).toLocaleTimeString()}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Scholarships Listing */}
-            {activeTab === "scholarships" && (
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                        <th className="p-4 pl-6">Scholarship Name</th>
-                        <th className="p-4">Type</th>
-                        <th className="p-4">Provider</th>
-                        <th className="p-4 text-right pr-6">Deadline</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scholarships.map((s, i) => (
-                        <tr key={s._id || s.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                          <td className="p-4 pl-6 font-bold text-slate-800">{s.name}</td>
-                          <td className="p-4"><span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100">{s.type}</span></td>
-                          <td className="p-4 text-slate-500 font-semibold text-sm">{s.provider || '-'}</td>
-                          <td className="p-4 text-right pr-6 text-slate-500 text-xs font-bold">{s.deadline ? new Date(s.deadline).toLocaleDateString() : 'None'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             )}
@@ -301,14 +237,16 @@ function AdminDashboard({ user, onLogout }) {
                       </thead>
                       <tbody>
                         {students.map((s, i) => (
-                          <tr key={s.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <tr key={s.id} onClick={() => loadStudentDetails(s.id)} className="border-b border-slate-100 hover:bg-emerald-50 cursor-pointer transition-colors group">
                             <td className="p-4 pl-6 text-slate-400 font-bold text-sm">{i + 1}</td>
-                            <td className="p-4 font-bold text-slate-800 text-sm">{s.full_name}</td>
+                            <td className="p-4 font-bold text-emerald-700 group-hover:text-emerald-800 text-sm flex items-center gap-2">
+                                {s.full_name} <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+                            </td>
                             <td className="p-4 text-slate-600 text-sm font-medium">{s.email}</td>
                             <td className="p-4 text-slate-600 text-sm font-medium">{s.phone}</td>
                             <td className="p-4 text-slate-600 text-sm font-medium">{s.college_name || '-'}</td>
                             <td className="p-4">
-                              <span className="bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-full text-xs font-black">{s.total_applications}</span>
+                              <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-black">{s.total_applications}</span>
                             </td>
                             <td className="p-4 text-right pr-6 text-slate-500 text-xs font-bold">{new Date(s.created_at).toLocaleDateString()}</td>
                           </tr>
@@ -319,9 +257,266 @@ function AdminDashboard({ user, onLogout }) {
                 )}
               </div>
             )}
+
+            {/* Verifications Tab */}
+            {activeTab === "verifications" && (
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-amber-500" /> Document Verification Queue
+                    <span className="bg-amber-100 text-amber-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{pendingDocs.length}</span>
+                  </h3>
+                   <button onClick={fetchLatest} className="text-slate-500 hover:text-emerald-600"><RefreshCw className="h-4 w-4" /></button>
+                </div>
+                {pendingDocs.length === 0 ? (
+                  <div className="text-center py-16">
+                    <CheckCircle className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500 font-bold">No documents pending verification</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                          <th className="p-4 pl-6">Student</th>
+                          <th className="p-4">Document Type</th>
+                          <th className="p-4">File / OCR Data</th>
+                          <th className="p-4 text-right pr-6">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pendingDocs.map((doc) => (
+                          <tr key={doc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                            <td className="p-4 pl-6">
+                                <p className="font-bold text-slate-800 text-sm">{doc.student_name}</p>
+                                <p className="text-xs text-slate-500">{doc.student_email}</p>
+                            </td>
+                            <td className="p-4 font-bold text-slate-600 text-sm uppercase tracking-wider">{doc.document_type.replace('_', ' ')}</td>
+                            <td className="p-4">
+                              <a href={`${BACKEND_URL}/${doc.file_path}`} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1 font-bold text-sm mb-1">
+                                <FileText className="h-4 w-4" /> {doc.file_name}
+                              </a>
+                              <p className="text-xs text-slate-500 max-w-sm truncate" title={doc.ocr_result}>{doc.ocr_result || 'No OCR data'}</p>
+                            </td>
+                            <td className="p-4 text-right pr-6 space-x-2 flex justify-end">
+                                <button onClick={() => handleVerifyDocument(doc.id, 'verified')} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Approve</button>
+                                <button onClick={() => handleVerifyDocument(doc.id, 'rejected')} className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Reject</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Scholarships Listing Tab */}
+            {activeTab === "scholarships" && (
+              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                     <Award className="h-5 w-5 text-indigo-500" /> Managed Scholarships
+                   </h3>
+                   <button onClick={() => navigate('/admin/add-scholarship')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                     <Plus className="h-4 w-4" /> Add Scholarship
+                   </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                        <th className="p-4 pl-6">Scholarship Name</th>
+                        <th className="p-4">Type</th>
+                        <th className="p-4">Provider</th>
+                        <th className="p-4">Deadline</th>
+                        <th className="p-4 text-right pr-6">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scholarships.map((s, i) => (
+                        <tr key={s._id || s.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                          <td className="p-4 pl-6 font-bold text-slate-800">{s.name}</td>
+                          <td className="p-4"><span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100">{s.type}</span></td>
+                          <td className="p-4 text-slate-500 font-semibold text-sm">{s.provider || '-'}</td>
+                          <td className="p-4 text-slate-500 text-xs font-bold">{s.deadline ? new Date(s.deadline).toLocaleDateString() : 'None'}</td>
+                          <td className="p-4 text-right pr-6">
+                            <button onClick={() => handleDeleteScholarship(s._id || s.id)} className="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Views Activity Tab */}
+            {activeTab === "views" && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-indigo-500" /> All Student Scholarship Views
+                      <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{views.length}</span>
+                    </h3>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input type="text" placeholder="Search by name, email, college..."
+                        value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 font-medium focus:outline-none focus:border-indigo-500 w-full md:w-80" />
+                    </div>
+                  </div>
+
+                  {filteredViews.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-50 border border-slate-100 rounded-xl">
+                      <Eye className="h-12 w-12 mx-auto mb-4 text-slate-300" />
+                      <p className="text-slate-500 font-bold text-sm">No student activity found</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            <th className="p-4 pl-6">#</th>
+                            <th className="p-4">Student Name</th>
+                            <th className="p-4">Email</th>
+                            <th className="p-4">Age</th>
+                            <th className="p-4">College</th>
+                            <th className="p-4">Scholarship Viewed</th>
+                            <th className="p-4 text-right pr-6">Viewed At</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredViews.map((v, i) => (
+                            <tr key={v.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors">
+                              <td className="p-4 pl-6 text-slate-400 font-bold text-sm">{i + 1}</td>
+                              <td className="p-4 font-bold text-slate-800 text-sm">{v.student_name}</td>
+                              <td className="p-4 text-slate-600 text-sm font-medium">{v.student_email}</td>
+                              <td className="p-4">
+                                {v.student_age ? (
+                                  <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[10px] font-black">{v.student_age} yrs</span>
+                                ) : <span className="text-slate-400 text-xs">-</span>}
+                              </td>
+                              <td className="p-4 text-slate-600 text-sm font-medium">{v.college_name || '-'}</td>
+                              <td className="p-4">
+                                <span className="text-indigo-700 font-bold text-sm">{v.scholarship_name}</span>
+                              </td>
+                              <td className="p-4 text-right pr-6 text-slate-500 text-xs font-bold">
+                                {new Date(v.viewed_at).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
+
+      {/* Student Details Modal overlay */}
+      {selectedStudent && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
+             <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex justify-between items-center z-10">
+               <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                 <Users className="h-5 w-5 text-emerald-600" /> Student Profile
+               </h2>
+               <button onClick={() => setSelectedStudent(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500"><X className="h-5 w-5" /></button>
+             </div>
+             
+             {studentDetailsLoading ? (
+                 <div className="flex justify-center py-20"><RefreshCw className="h-8 w-8 text-emerald-500 animate-spin" /></div>
+             ) : selectedStudent.student ? (
+                <div className="p-6 space-y-8">
+                  {/* Profile Section */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
+                        <p className="font-bold text-slate-800">{selectedStudent.student.full_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Email</p>
+                        <p className="font-medium text-slate-600">{selectedStudent.student.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Phone</p>
+                        <p className="font-medium text-slate-600">{selectedStudent.student.phone}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">College</p>
+                        <p className="font-medium text-slate-600">{selectedStudent.student.college_name || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Documents List */}
+                    <div>
+                      <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex justify-between items-center">
+                        Uploaded Documents <span className="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">{selectedStudent.documents?.length || 0}</span>
+                      </h3>
+                      {selectedStudent.documents?.length === 0 ? (
+                        <p className="text-sm text-slate-400 italic">No documents uploaded.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {selectedStudent.documents.map(doc => (
+                            <div key={doc.id} className="border border-slate-200 rounded-lg p-3 hover:border-emerald-300 transition-colors bg-white shadow-sm">
+                               <div className="flex justify-between items-start mb-2">
+                                  <span className="text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                    {doc.document_type.replace('_', ' ')}
+                                  </span>
+                                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                    doc.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
+                                    doc.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                  }`}>
+                                    {doc.verification_status}
+                                  </span>
+                               </div>
+                               <a href={`${BACKEND_URL}/${doc.file_path}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                                 <FileText className="h-3 w-3" /> {doc.file_name}
+                               </a>
+                               {doc.ocr_result && <p className="text-xs text-slate-500 mt-2 truncate bg-slate-50 p-1.5 rounded">{doc.ocr_result}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Applications List */}
+                    <div>
+                      <h3 className="font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2 flex justify-between items-center">
+                        Applications <span className="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded-full">{selectedStudent.applications?.length || 0}</span>
+                      </h3>
+                      {selectedStudent.applications?.length === 0 ? (
+                        <p className="text-sm text-slate-400 italic">No applications found.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {selectedStudent.applications.map(app => (
+                            <div key={app.id} className="border border-slate-200 rounded-lg p-3 bg-white shadow-sm">
+                               <p className="font-bold text-indigo-700 text-sm mb-1">{app.scholarship_name}</p>
+                               <div className="flex justify-between items-center text-xs text-slate-500">
+                                  <span>{app.provider}</span>
+                                  <span className="font-bold px-2 py-0.5 bg-slate-100 rounded-full">{app.status}</span>
+                               </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+             ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

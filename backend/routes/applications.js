@@ -96,6 +96,35 @@ router.get("/applications/admin/students", (req, res) => {
   }
 });
 
+// ==================== ADMIN: GET STUDENT DETAILS ====================
+router.get("/applications/admin/students/:id/details", (req, res) => {
+  try {
+    const studentId = req.params.id;
+    // Get student profile
+    const student = db.prepare("SELECT id, full_name, email, phone, college_name, dob, created_at, role, language FROM users WHERE id = ?").get(studentId);
+    if (!student) {
+      return res.status(404).json({ success: false, detail: "Student not found" });
+    }
+
+    // Get applications
+    const apps = db.prepare(`
+      SELECT a.*, s.name as scholarship_name, s.provider, s.amount
+      FROM applications a
+      JOIN scholarships s ON a.scholarship_id = s.id
+      WHERE a.user_id = ?
+      ORDER BY a.applied_at DESC
+    `).all(studentId);
+
+    // Get documents
+    const docs = db.prepare("SELECT * FROM documents WHERE user_id = ? ORDER BY uploaded_at DESC").all(studentId);
+
+    res.json({ success: true, student, applications: apps, documents: docs });
+  } catch (err) {
+    console.error("Student details error:", err);
+    res.status(500).json({ success: false, detail: "Failed to fetch student details" });
+  }
+});
+
 // ==================== LOG SCHOLARSHIP VIEW (deduplicates) ====================
 router.post("/scholarships/view", (req, res) => {
   try {

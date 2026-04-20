@@ -188,12 +188,19 @@ router.post("/auth/login", async (req, res) => {
   try {
     const { phone, password, loginType } = req.body;
 
-    if (!phone || !password) {
-      return res.status(400).json({ success: false, detail: "Phone and password are required" });
+    // 'phone' field now accepts either phone number or email
+    const identifier = phone;
+    if (!identifier || !password) {
+      return res.status(400).json({ success: false, detail: "Phone/Email and password are required" });
     }
 
-    // Find user
-    const user = db.prepare("SELECT * FROM users WHERE phone = ?").get(phone);
+    // Auto-detect: if it contains '@', search by email; otherwise search by phone
+    let user;
+    if (identifier.includes('@')) {
+      user = db.prepare("SELECT * FROM users WHERE email = ?").get(identifier);
+    } else {
+      user = db.prepare("SELECT * FROM users WHERE phone = ?").get(identifier);
+    }
     if (!user) {
       return res.status(401).json({ success: false, detail: "Invalid credentials. User not found." });
     }

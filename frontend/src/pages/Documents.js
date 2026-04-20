@@ -342,10 +342,10 @@ function VerificationResultDisplay(props) {
   var data = result.extractedData || {};
 
   return (
-    <div className={'rounded-xl p-5 border ' + (isOk ? 'bg-emerald-50 border-emerald-200 shadow-sm' : 'bg-red-50 border-red-200 shadow-sm')}>
+    <div className={'rounded-xl p-5 border ' + (isOk ? 'bg-emerald-50 border-emerald-200 shadow-sm' : (result.verification_status === 'pending' ? 'bg-amber-50 border-amber-200 shadow-sm' : 'bg-red-50 border-red-200 shadow-sm'))}>
       <div className="flex items-center gap-2 mb-3">
-        <Shield className={'h-5 w-5 ' + (isOk ? 'text-emerald-600' : 'text-red-600')} />
-        <span className={'font-bold text-sm uppercase tracking-wide ' + (isOk ? 'text-emerald-800' : 'text-red-800')}>
+        <Shield className={'h-5 w-5 ' + (isOk ? 'text-emerald-600' : (result.verification_status === 'pending' ? 'text-amber-600' : 'text-red-600'))} />
+        <span className={'font-bold text-sm uppercase tracking-wide ' + (isOk ? 'text-emerald-800' : (result.verification_status === 'pending' ? 'text-amber-800' : 'text-red-800'))}>
           {result.digilocker_status}
         </span>
       </div>
@@ -413,7 +413,7 @@ function VerificationResultDisplay(props) {
       
       <div className="flex items-center gap-4 mt-4">
         <div className="flex-1 bg-slate-200 rounded-full h-2.5 overflow-hidden">
-          <div className={'h-2.5 rounded-full ' + (isOk ? 'bg-emerald-500' : 'bg-red-500')}
+          <div className={'h-2.5 rounded-full ' + (isOk ? 'bg-emerald-500' : (result.verification_status === 'pending' ? 'bg-amber-500' : 'bg-red-500'))}
             style={{ width: result.confidence + '%' }}></div>
         </div>
         <span className="text-slate-700 text-xs font-bold">{result.confidence}% Match</span>

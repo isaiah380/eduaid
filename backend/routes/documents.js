@@ -3,59 +3,165 @@ import db from "../db.js";
 import { v4 as uuidv4 } from "uuid";
 import { upload } from "../middleware/upload.js";
 import fs from "fs";
+import path from "path";
 import { createRequire } from "module";
+import Tesseract from "tesseract.js";
+
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const pdfParseModule = require("pdf-parse");
+const PDFParse = pdfParseModule.PDFParse || pdfParseModule;
 
 const router = express.Router();
 
-// ==================== DigiLocker Verification Configuration ====================
-// Defines strict rules for each document type
+// ==================== Document Verification Rules ====================
+// Each document type now has CONTENT keywords that must be found INSIDE the document,
+// not just in the filename. This prevents fake documents from passing.
 const DOCUMENT_RULES = {
   '10th_marksheet': {
     label: '10th Marksheet',
-    requiredKeywords: ['marksheet', 'mark', 'result', '10th', 'ssc', 'tenth', 'secondary', 'board', 'class x', 'class-x', 'matric'],
-    forbiddenKeywords: [],
+    filenameKeywords: ['marksheet', 'mark', 'result', '10th', 'ssc', 'tenth', 'secondary', 'board', 'class x', 'class-x', 'matric'],
+    contentKeywords: {
+      required: ['mark', 'subject', 'board', 'गुणपत्रिका', 'विषय', 'मंडळ'],
+      strong: ['marksheet', 'statement of marks', 'secondary', 'examination', 'roll no', 'seat no', 'total', 'result', 'grade', 'pass', 'division', 'board of secondary', 'ssc', 'cbse', 'icse', 'state board', 'maharashtra', 'certificate',
+        // Marathi
+        'गुणपत्रिका', 'माध्यमिक', 'परीक्षा', 'गुण', 'एकूण', 'उत्तीर्ण', 'अनुत्तीर्ण', 'श्रेणी', 'विभाग', 'बैठक क्रमांक', 'अनुक्रमांक', 'प्रमाणपत्र', 'महाराष्ट्र राज्य', 'शिक्षण'],
+      governmentMarkers: ['government', 'board of', 'ministry', 'education', 'controller of examination', 'registration', 'seal', 'secretary', 'chairman', 'director',
+        'शासन', 'मंडळ', 'शिक्षण विभाग', 'सचिव', 'अध्यक्ष', 'संचालक', 'महाराष्ट्र'],
+      minRequiredMatches: 2,
+      minStrongMatches: 3,
+      minGovtMatches: 1
+    },
     acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
     maxSizeMB: 5,
     description: 'Class 10 / SSC / Matriculation marksheet or result document'
   },
   '12th_marksheet': {
     label: '12th Marksheet',
-    requiredKeywords: ['marksheet', 'mark', 'result', '12th', 'hsc', 'twelfth', 'senior secondary', 'intermediate', 'board', 'class xii', 'class-xii', 'plus two'],
-    forbiddenKeywords: [],
+    filenameKeywords: ['marksheet', 'mark', 'result', '12th', 'hsc', 'twelfth', 'senior secondary', 'intermediate', 'board', 'class xii', 'class-xii', 'plus two'],
+    contentKeywords: {
+      required: ['mark', 'subject', 'board', 'गुणपत्रिका', 'विषय', 'मंडळ'],
+      strong: ['marksheet', 'statement of marks', 'senior secondary', 'higher secondary', 'examination', 'roll no', 'seat no', 'total', 'result', 'grade', 'pass', 'division', 'hsc', 'cbse', 'icse', 'intermediate', 'certificate', '12th', 'xii',
+        'गुणपत्रिका', 'उच्च माध्यमिक', 'परीक्षा', 'गुण', 'एकूण', 'उत्तीर्ण', 'श्रेणी', 'प्रमाणपत्र', 'महाराष्ट्र राज्य'],
+      governmentMarkers: ['government', 'board of', 'ministry', 'education', 'controller of examination', 'registration', 'seal', 'secretary', 'chairman', 'director',
+        'शासन', 'मंडळ', 'शिक्षण विभाग', 'सचिव', 'महाराष्ट्र'],
+      minRequiredMatches: 2,
+      minStrongMatches: 3,
+      minGovtMatches: 1
+    },
     acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
     maxSizeMB: 5,
     description: 'Class 12 / HSC / Intermediate marksheet or result document'
   },
   'aadhar': {
     label: 'Aadhaar Card',
-    requiredKeywords: ['aadhar', 'aadhaar', 'uid', 'uidai', 'unique identification', 'enrolment'],
-    forbiddenKeywords: [],
+    filenameKeywords: ['aadhar', 'aadhaar', 'uid', 'uidai', 'unique identification', 'enrolment'],
+    contentKeywords: {
+      required: ['aadhaar', 'government of india', 'आधार', 'भारत सरकार'],
+      strong: ['aadhaar', 'aadhar', 'unique identification', 'uidai', 'government of india', 'date of birth', 'dob', 'male', 'female', 'address', 'vid', 'enrolment',
+        'आधार', 'भारत सरकार', 'जन्म तारीख', 'पुरुष', 'स्त्री', 'महिला', 'पत्ता'],
+      governmentMarkers: ['government of india', 'uidai', 'unique identification authority', 'help@uidai', 'aadhaar',
+        'भारत सरकार', 'आधार'],
+      minRequiredMatches: 1,
+      minStrongMatches: 3,
+      minGovtMatches: 1
+    },
     acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
     maxSizeMB: 2,
     description: 'Aadhaar Card issued by UIDAI'
   },
   'income_certificate': {
     label: 'Income Certificate',
-    requiredKeywords: ['income', 'certificate', 'annual income', 'salary', 'revenue', 'tahsildar'],
-    forbiddenKeywords: [],
+    filenameKeywords: ['income', 'certificate', 'annual income', 'salary', 'revenue', 'tahsildar', 'utpanna', 'dakhla'],
+    contentKeywords: {
+      required: ['income', 'certificate', 'उत्पन्न', 'दाखला', 'प्रमाणपत्र'],
+      strong: ['income certificate', 'annual income', 'family income', 'tahsildar', 'revenue', 'district', 'taluka', 'certified', 'certify', 'hereby', 'per annum', 'annual', 'rupees', 'rs', 'lakh', 'salary', 'earning',
+        // Marathi
+        'उत्पन्न', 'उत्पन्नाचा दाखला', 'दाखला', 'प्रमाणपत्र', 'वार्षिक उत्पन्न', 'कौटुंबिक उत्पन्न', 'तहसीलदार', 'तलाठी', 'महसूल', 'जिल्हा', 'तालुका', 'प्रमाणित', 'रुपये', 'रु', 'लाख', 'वार्षिक', 'कुटुंब', 'मासिक',
+        // Hindi
+        'आय प्रमाण पत्र', 'आय', 'वार्षिक आय', 'तहसीलदार', 'जिला', 'प्रमाणित'],
+      governmentMarkers: ['government', 'revenue department', 'tahsildar', 'collector', 'district', 'office of', 'state government', 'seal', 'signature', 'authority', 'competent authority', 'certified copy', 'tehsildar', 'sub-divisional', 'magistrate',
+        // Marathi
+        'शासन', 'महसूल विभाग', 'तहसीलदार', 'जिल्हाधिकारी', 'जिल्हा', 'कार्यालय', 'महाराष्ट्र शासन', 'शिक्का', 'सही', 'प्राधिकारी', 'सक्षम अधिकारी', 'उपविभागीय अधिकारी', 'नायब तहसीलदार', 'मंडळ अधिकारी',
+        'सरकार', 'राज्य सरकार'],
+      minRequiredMatches: 1,
+      minStrongMatches: 2,
+      minGovtMatches: 1
+    },
     acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
     maxSizeMB: 3,
     description: 'Income certificate issued by Tahsildar / Revenue department'
   },
   'caste_certificate': {
     label: 'Caste Certificate',
-    requiredKeywords: ['caste', 'certificate', 'community', 'category', 'sc', 'st', 'obc', 'bc', 'scheduled'],
-    forbiddenKeywords: [],
+    filenameKeywords: ['caste', 'certificate', 'community', 'category', 'sc', 'st', 'obc', 'bc', 'scheduled', 'jati', 'dakhla'],
+    contentKeywords: {
+      required: ['caste', 'certificate', 'जात', 'जाती', 'दाखला', 'प्रमाणपत्र'],
+      strong: ['caste certificate', 'community certificate', 'scheduled caste', 'scheduled tribe', 'obc', 'other backward', 'category', 'belongs to', 'hereby certify', 'certified', 'community', 'sc', 'st', 'bc',
+        // Marathi
+        'जात', 'जाती', 'जातीचा दाखला', 'दाखला', 'प्रमाणपत्र', 'अनुसूचित जाती', 'अनुसूचित जमाती', 'इतर मागास वर्ग', 'मागास', 'प्रवर्ग', 'समाज', 'प्रमाणित', 'जात पडताळणी',
+        // Hindi
+        'जाति प्रमाण पत्र', 'जाति', 'अनुसूचित जाति', 'अनुसूचित जनजाति', 'अन्य पिछड़ा वर्ग'],
+      governmentMarkers: ['government', 'district', 'collector', 'tahsildar', 'office', 'competent authority', 'seal', 'state government', 'sub-divisional', 'magistrate', 'certificate number',
+        // Marathi
+        'शासन', 'जिल्हा', 'जिल्हाधिकारी', 'तहसीलदार', 'कार्यालय', 'सक्षम अधिकारी', 'महाराष्ट्र शासन', 'उपविभागीय अधिकारी', 'दाखला क्रमांक', 'शिक्का',
+        'सरकार', 'राज्य सरकार'],
+      minRequiredMatches: 1,
+      minStrongMatches: 2,
+      minGovtMatches: 1
+    },
     acceptedMimeTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
     maxSizeMB: 3,
     description: 'Caste / Community certificate issued by competent authority'
   }
 };
 
-// ==================== DigiLocker-style Verification Logic ====================
-function verifyDocument(fileName, fileSize, mimeType, documentType, pdfText) {
+// ==================== Extract text from any document (PDF or Image) ====================
+async function extractDocumentText(filePath, mimeType) {
+  let extractedText = '';
+
+  if (!fs.existsSync(filePath)) {
+    return { text: '', method: 'none', error: 'File not found on disk' };
+  }
+
+  // PDF: use pdf-parse
+  if (mimeType === 'application/pdf') {
+    try {
+      const dataBuffer = fs.readFileSync(filePath);
+      const pdfData = await pdfParseModule(dataBuffer);
+      extractedText = pdfData.text || '';
+      
+      if (extractedText.trim().length > 10) {
+        return { text: extractedText, method: 'pdf-parse' };
+      }
+      // If PDF has no embedded text (scanned PDF), we return what we have (Tesseract cannot read PDFs)
+      return { text: extractedText, method: 'pdf-parse-limited' };
+    } catch (e) {
+      console.error("PDF parse failed:", e.message);
+      // For PDFs that fail parsing, return empty — Tesseract cannot handle PDFs
+      return { text: '', method: 'pdf-parse-failed', error: e.message };
+    }
+  }
+
+  // Image ONLY: use Tesseract OCR with English + Marathi + Hindi
+  if (mimeType.startsWith('image/')) {
+    try {
+      console.log(`🔍 Running OCR (eng+mar+hin) on image: ${filePath}`);
+      const { data } = await Tesseract.recognize(filePath, 'eng+mar+hin', {
+        logger: () => {} // silent
+      });
+      extractedText = data.text || '';
+      return { text: extractedText, method: 'tesseract-ocr', confidence: data.confidence };
+    } catch (e) {
+      console.error("Tesseract OCR failed:", e.message);
+      return { text: '', method: 'ocr-failed', error: e.message };
+    }
+  }
+
+  return { text: extractedText, method: 'pdf-parse' };
+}
+
+// ==================== Content-Based Verification Logic ====================
+function verifyDocumentContent(fileName, fileSize, mimeType, documentType, contentText) {
   const rules = DOCUMENT_RULES[documentType];
   if (!rules) {
     return {
@@ -71,91 +177,129 @@ function verifyDocument(fileName, fileSize, mimeType, documentType, pdfText) {
   const warnings = [];
   let confidence = 0;
 
-  // 1. MIME type check
+  // ---- STEP 1: Basic file checks (MIME, size, extension) ----
   const normalizedMime = mimeType?.toLowerCase() || '';
   if (!rules.acceptedMimeTypes.some(t => normalizedMime.includes(t.split('/')[1]))) {
     errors.push(`Invalid file format. Accepted: PDF, JPG, PNG only.`);
   } else {
-    confidence += 15;
+    confidence += 5;
   }
 
-  // 2. File size check
   const maxBytes = rules.maxSizeMB * 1024 * 1024;
   if (fileSize > maxBytes) {
     errors.push(`File too large. Maximum ${rules.maxSizeMB}MB allowed for ${rules.label}.`);
   } else {
-    confidence += 10;
+    confidence += 5;
   }
 
-  // 3. File name analysis — KEY VERIFICATION STEP
-  const fileNameLower = fileName.toLowerCase().replace(/[_\-\.]/g, ' ');
-
-  // Check if filename contains ANY relevant keyword for the document type
-  const matchedKeywords = rules.requiredKeywords.filter(kw => fileNameLower.includes(kw.toLowerCase()));
-
-  if (matchedKeywords.length === 0) {
-    // STRICT: No matching keywords found — the file does NOT appear to be the right document
-    errors.push(
-      `Document verification failed: The uploaded file "${fileName}" does not appear to be a valid ${rules.label}. ` +
-      `Expected file name to contain keywords like: ${rules.requiredKeywords.slice(0, 4).join(', ')}. ` +
-      `Please upload the correct document through DigiLocker or ensure the file name matches the document type.`
-    );
-  } else {
-    confidence += 30 + (matchedKeywords.length * 10);
-  }
-
-  // 4. Cross-type contamination check — reject if file seems to be a DIFFERENT document type
-  const otherTypes = Object.entries(DOCUMENT_RULES).filter(([key]) => key !== documentType);
-  for (const [otherKey, otherRules] of otherTypes) {
-    const otherMatches = otherRules.requiredKeywords.filter(kw =>
-      fileNameLower.includes(kw.toLowerCase()) && !rules.requiredKeywords.includes(kw)
-    );
-    if (otherMatches.length >= 2 && matchedKeywords.length === 0) {
-      errors.push(
-        `This file appears to be a ${otherRules.label} rather than a ${rules.label}. ` +
-        `Please upload the correct document.`
-      );
-      break;
-    }
-  }
-
-  // 5. Extension check
   const ext = fileName.split('.').pop()?.toLowerCase();
   if (!['pdf', 'jpg', 'jpeg', 'png'].includes(ext)) {
     errors.push('Invalid file extension. Only PDF, JPG, and PNG files are accepted.');
-  } else {
-    confidence += 10;
   }
 
-  // Cap confidence
+  // ---- STEP 2: CONTENT ANALYSIS (the critical part) ----
+  const contentLower = (contentText || '').toLowerCase();
+  const contentRules = rules.contentKeywords;
+
+  // Check if we got any text at all
+  if (contentLower.trim().length < 20) {
+    warnings.push(
+      `Content verification incomplete: Could not extract readable text from the document. ` +
+      `This often happens with scanned PDFs or blurry images. ` +
+      `Your document has been sent to the admin for manual verification.`
+    );
+    return {
+      verified: false,
+      status: 'pending',
+      reason: `Could not extract text. Sent for manual verification.`,
+      warnings,
+      digilocker_status: 'MANUAL_VERIFICATION_REQUIRED',
+      confidence: 0
+    };
+  }
+
+  // 2a. Required keyword matches
+  const requiredMatches = contentRules.required.filter(kw => contentLower.includes(kw.toLowerCase()));
+  const requiredScore = requiredMatches.length;
+
+  // 2b. Strong keyword matches
+  const strongMatches = contentRules.strong.filter(kw => contentLower.includes(kw.toLowerCase()));
+  const strongScore = strongMatches.length;
+
+  // 2c. Government/official markers
+  const govtMatches = contentRules.governmentMarkers.filter(kw => contentLower.includes(kw.toLowerCase()));
+  const govtScore = govtMatches.length;
+
+  console.log(`\n📄 Content Analysis for ${rules.label}:`);
+  console.log(`   Required keyword hits: ${requiredScore}/${contentRules.minRequiredMatches} (${requiredMatches.join(', ')})`);
+  console.log(`   Strong keyword hits: ${strongScore}/${contentRules.minStrongMatches} (${strongMatches.join(', ')})`);
+  console.log(`   Govt marker hits: ${govtScore}/${contentRules.minGovtMatches} (${govtMatches.join(', ')})`);
+
+  // Evaluate content match
+  const passedRequired = requiredScore >= contentRules.minRequiredMatches;
+  const passedStrong = strongScore >= contentRules.minStrongMatches;
+  const passedGovt = govtScore >= contentRules.minGovtMatches;
+
+  if (!passedRequired) {
+    errors.push(
+      `Content verification failed: The document content does not match a ${rules.label}. ` +
+      `Expected to find keywords like: ${contentRules.required.join(', ')}. ` +
+      `Found only: ${requiredMatches.length > 0 ? requiredMatches.join(', ') : 'none'}. ` +
+      `Please upload an authentic ${rules.label}.`
+    );
+  }
+
+  if (!passedStrong) {
+    errors.push(
+      `Document authenticity check failed: Insufficient matching content for ${rules.label}. ` +
+      `The document does not contain enough indicators of a genuine ${rules.label} ` +
+      `(found ${strongScore} of minimum ${contentRules.minStrongMatches} required indicators).`
+    );
+  }
+
+  if (!passedGovt) {
+    warnings.push(
+      `Warning: No government/official authority markers found. ` +
+      `Authentic ${rules.label} documents should contain references to issuing government authority.`
+    );
+    // This is a warning, not a hard error — but it lowers confidence significantly
+    if (!passedRequired || !passedStrong) {
+      errors.push(`No official government markers detected in document content.`);
+    }
+  }
+
+  // Calculate confidence based on content matches
+  confidence += Math.min(requiredScore * 15, 30);   // up to 30
+  confidence += Math.min(strongScore * 5, 30);       // up to 30
+  confidence += Math.min(govtScore * 10, 20);        // up to 20
   confidence = Math.min(confidence, 100);
 
+  // If content checks failed, reject
   if (errors.length > 0) {
     return {
       verified: false,
       status: 'rejected',
       reason: errors.join(' | '),
       warnings,
-      digilocker_status: 'VERIFICATION_FAILED',
-      confidence: Math.min(confidence, 20)
+      digilocker_status: 'CONTENT_VERIFICATION_FAILED',
+      confidence: Math.min(confidence, 25)
     };
   }
 
-  let finalReason = `${rules.label} verified successfully via DigiLocker. Matched keywords: ${matchedKeywords.join(', ')}.`;
+  // ---- STEP 3: Extract additional data from verified documents ----
+  let finalReason = `${rules.label} VERIFIED — Content analysis passed. ` +
+    `Matched: ${requiredMatches.join(', ')} | Official markers: ${govtMatches.join(', ')}.`;
 
-  // Simulated OCR & Real OCR combo: Extract percentage if it's a marksheet
+  // Extract percentage from marksheets
   if (['10th_marksheet', '12th_marksheet'].includes(documentType)) {
     let extractedPercentage = 0;
     let foundRealPct = false;
 
-    // 1. First try to find a percentage in the Real PDF text if available
-    if (pdfText) {
-      // Look for explicit tags like "Percentage: 85", "Total marks 92.5", or "85.4%"
-      // This smart regex allows up to 15 characters between the keyword and the number
-      const kwMatch = pdfText.match(/(?:percentage|percent)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
-      const pctSymbolMatch = pdfText.match(/([0-9]{2,3}(?:\.[0-9]+)?)\s*%/i);
-      const fractionMatch = pdfText.match(/([0-9]{2,4})\s*\/\s*([0-9]{2,4})/);
-      const cgpaMatch = pdfText.match(/(?:cgpa|sgpa|gpa)[\s:a-zA-Z\-]{0,10}?([0-9](?:\.[0-9]+)?)/i);
+    if (contentText) {
+      const kwMatch = contentText.match(/(?:percentage|percent)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
+      const pctSymbolMatch = contentText.match(/([0-9]{2,3}(?:\.[0-9]+)?)\s*%/i);
+      const fractionMatch = contentText.match(/([0-9]{2,4})\s*\/\s*([0-9]{2,4})/);
+      const cgpaMatch = contentText.match(/(?:cgpa|sgpa|gpa)[\s:a-zA-Z\-]{0,10}?([0-9](?:\.[0-9]+)?)/i);
 
       let rawVal = null;
       if (fractionMatch && parseFloat(fractionMatch[2]) > 0) {
@@ -176,45 +320,25 @@ function verifyDocument(fileName, fileSize, mimeType, documentType, pdfText) {
       }
     }
 
-    if (!foundRealPct) {
-      // 2. Next try filename convention
-      const numberMatch = fileNameLower.match(/(?:[^0-9]|^)([6-9][0-9])(?:[^0-9]|$)/);
-      if (numberMatch && numberMatch[1]) {
-        extractedPercentage = parseFloat(numberMatch[1]) + (Math.floor(Math.random() * 9) / 10);
-      } else {
-        // 3. Fallback default
-        extractedPercentage = 65 + Math.floor(Math.random() * 30) + (Math.floor(Math.random() * 9) / 10);
-      }
+    if (foundRealPct) {
+      extractedPercentage = extractedPercentage.toFixed(1);
+      finalReason += ` Extracted Percentage: ${extractedPercentage}%`;
+    } else {
+      finalReason += ` Extracted Percentage: Could not extract from content.`;
     }
-    extractedPercentage = extractedPercentage.toFixed(1);
-    finalReason += ` Extracted Percentage: ${extractedPercentage}%`;
-
-    // Also simulate DOB extraction from 10th/12th marksheet
-    let age = 18; // Default student age
-    const ageMatch = fileNameLower.match(/age\s*(\d{2})/);
-    if (ageMatch && ageMatch[1]) {
-      age = parseInt(ageMatch[1]);
-    } else if (fileNameLower.includes('old') || fileNameLower.includes('adult')) {
-      age = 45; // Test simulated older profile
-    }
-    const currentYear = new Date().getFullYear();
-    const dobYear = currentYear - age;
-    finalReason += ` | DOB: 01/01/${dobYear} | Age: ${age}`;
   }
 
+  // Extract UID pattern from Aadhaar
   if (documentType === 'aadhar') {
-    let age = 20; // default young student
-    const ageMatch = fileNameLower.match(/age\s*(\d{2})/);
-    if (ageMatch && ageMatch[1]) {
-      age = parseInt(ageMatch[1]);
-    } else if (fileNameLower.includes('old') || fileNameLower.includes('adult')) {
-      age = 45; // Test simulated older profile
+    const uidMatch = contentText.match(/(\d{4}\s?\d{4}\s?\d{4})/);
+    if (uidMatch) {
+      const masked = 'XXXX-XXXX-' + uidMatch[1].replace(/\s/g, '').slice(-4);
+      finalReason += ` UID: ${masked}`;
     }
-
-    // Calculate a DOB year from the age
-    const currentYear = new Date().getFullYear();
-    const dobYear = currentYear - age;
-    finalReason += ` Aadhaar: XXXX-XXXX-1234 | DOB: 01/01/${dobYear} | Age: ${age}`;
+    const dobMatch = contentText.match(/(?:dob|date of birth|birth)[\s:]*(\d{2}[\/-]\d{2}[\/-]\d{4})/i);
+    if (dobMatch) {
+      finalReason += ` | DOB: ${dobMatch[1]}`;
+    }
   }
 
   return {
@@ -301,7 +425,7 @@ router.delete("/documents/:id", (req, res) => {
   }
 });
 
-// ==================== VERIFY DOCUMENT (DigiLocker-style) ====================
+// ==================== VERIFY DOCUMENT (Content-Based Analysis) ====================
 router.post("/documents/verify/:id", async (req, res) => {
   try {
     const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id);
@@ -315,7 +439,7 @@ router.post("/documents/verify/:id", async (req, res) => {
       const stats = fs.statSync(doc.file_path);
       fileSize = stats.size;
     } catch (e) {
-      fileSize = 0; // file may have been deleted
+      fileSize = 0;
     }
 
     // Determine MIME type from extension
@@ -323,20 +447,20 @@ router.post("/documents/verify/:id", async (req, res) => {
     const mimeMap = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
     const mimeType = mimeMap[ext] || 'unknown';
 
-    // Attempt real OCR if it's a PDF
-    let pdfText = '';
-    if (mimeType === 'application/pdf' && fs.existsSync(doc.file_path)) {
-      try {
-        const dataBuffer = fs.readFileSync(doc.file_path);
-        const pdfData = await pdfParse(dataBuffer);
-        pdfText = pdfData.text;
-      } catch (e) {
-        console.error("PDF parse failed:", e);
-      }
+    // STEP 1: Extract text from document (PDF text extraction + Tesseract OCR for images)
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🔍 VERIFYING: ${doc.file_name} (type: ${doc.document_type})`);
+    const extraction = await extractDocumentText(doc.file_path, mimeType);
+    console.log(`📝 Extraction method: ${extraction.method}`);
+    console.log(`📝 Extracted ${extraction.text.length} characters of text`);
+    if (extraction.text.length > 0) {
+      console.log(`📝 Preview: "${extraction.text.substring(0, 200).replace(/\n/g, ' ')}..."`);
     }
 
-    // Run DigiLocker verification
-    const result = verifyDocument(doc.file_name, fileSize, mimeType, doc.document_type, pdfText);
+    // STEP 2: Run content-based verification
+    const result = verifyDocumentContent(doc.file_name, fileSize, mimeType, doc.document_type, extraction.text);
+    console.log(`✅ Result: ${result.status} (confidence: ${result.confidence}%)`);
+    console.log(`${'='.repeat(60)}\n`);
 
     // Update database
     db.prepare("UPDATE documents SET verification_status = ?, is_verified = ?, ocr_result = ? WHERE id = ?")
@@ -349,11 +473,60 @@ router.post("/documents/verify/:id", async (req, res) => {
       ocr_result: result.reason,
       digilocker_status: result.digilocker_status,
       confidence: result.confidence,
-      warnings: result.warnings || []
+      warnings: result.warnings || [],
+      extraction_method: extraction.method
     });
   } catch (err) {
     console.error("Verify error:", err);
     res.status(500).json({ success: false, detail: "Verification failed" });
+  }
+});
+
+// ==================== ADMIN: GET PENDING DOCUMENTS ====================
+router.get("/documents/admin/pending", (req, res) => {
+  try {
+    const docs = db.prepare(`
+      SELECT d.*, u.full_name as student_name, u.email as student_email, u.college_name 
+      FROM documents d 
+      JOIN users u ON d.user_id = u.id 
+      WHERE d.verification_status = 'pending' 
+      ORDER BY d.uploaded_at ASC
+    `).all();
+    res.json({ success: true, documents: docs });
+  } catch (err) {
+    res.status(500).json({ success: false, detail: "Failed to fetch pending documents" });
+  }
+});
+
+// ==================== ADMIN: MANUAL VERIFY DOCUMENT ====================
+router.post("/documents/admin/verify/:id", (req, res) => {
+  try {
+    const { status } = req.body; // 'verified' or 'rejected'
+    if (!['verified', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, detail: "Invalid status. Use 'verified' or 'rejected'." });
+    }
+
+    const docId = req.params.id;
+    const isVerified = status === 'verified' ? 1 : 0;
+    
+    let ocrSuffix = '';
+    if (status === 'rejected') {
+       ocrSuffix = " | Admin Rejected: Invalid or incorrect document.";
+    } else {
+       ocrSuffix = " | Admin Approved.";
+    }
+
+    db.prepare(`
+      UPDATE documents 
+      SET verification_status = ?, is_verified = ?, 
+          ocr_result = COALESCE(ocr_result, '') || ? 
+      WHERE id = ?
+    `).run(status, isVerified, ocrSuffix, docId);
+
+    res.json({ success: true, message: `Document ${status} successfully` });
+  } catch (err) {
+    console.error("Admin verify error:", err);
+    res.status(500).json({ success: false, detail: "Failed to update document status" });
   }
 });
 

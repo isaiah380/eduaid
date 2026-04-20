@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { GraduationCap, Phone, Lock, ArrowLeft } from 'lucide-react';
+import { GraduationCap, Phone, Lock, ArrowLeft, Mail } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const API = `${BACKEND_URL}/api`;
@@ -67,8 +67,8 @@ function Login({ onLogin }) {
 
 
                 <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold"><Phone className="inline h-4 w-4 mr-2 text-slate-400" />Phone Number</Label>
-                  <Input type="tel" placeholder="10-digit mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} required
+                  <Label className="text-slate-700 font-bold"><Mail className="inline h-4 w-4 mr-2 text-slate-400" />Phone Number or Email</Label>
+                  <Input type="text" placeholder="Enter phone number or email" value={phone} onChange={(e) => setPhone(e.target.value)} required
                     className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-300 focus:border-blue-500 focus:ring-blue-500 py-6" />
                 </div>
                 <div className="space-y-2">
