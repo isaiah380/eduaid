@@ -1,136 +1,32 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
-import nodemailer from "nodemailer";
 import db from "../db.js";
+import admin from "../firebaseAdmin.js";
+import { verifyFirebaseToken } from "../middleware/firebaseAuth.js";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "scholarship_portal_secret_key_2026";
 
-// Create email transporter (Ethereal for demo)
-let transporter;
-async function getTransporter() {
-  if (transporter) return transporter;
-  // Use Ethereal for demo
-  const testAccount = await nodemailer.createTestAccount();
-  transporter = nodemailer.createTransport({
-    host: testAccount.smtp.host,
-    port: testAccount.smtp.port,
-    secure: testAccount.smtp.secure,
-    auth: { user: testAccount.user, pass: testAccount.pass },
-  });
-  return transporter;
-}
-
-// ==================== SEND OTP ====================
-router.post("/auth/send-otp", async (req, res) => {
+// ==================== REGISTER (Firebase Auth + SQLite Profile) ====================
+// Frontend creates Firebase user first, then calls this with the Firebase ID token
+router.post("/auth/register", verifyFirebaseToken, async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ success: false, detail: "Email is required" });
+    const { full_name, phone, dob, college_name, last_exam_date } = req.body;
+    const firebaseUid = req.firebaseUser.uid;
+    const email = req.firebaseUser.email;
 
-    // Check if email already registered
-    const existingUser = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
-    if (existingUser) {
-      return res.status(400).json({ success: false, detail: "Email already registered. Please login instead." });
+    if (!full_name || !phone) {
+      return res.status(400).json({ success: false, detail: "Full name and phone are required" });
     }
 
-    // Generate 6-digit OTP
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
-
-    // Invalidate old OTPs for this email
-    db.prepare("UPDATE otps SET used = 1 WHERE email = ? AND used = 0").run(email);
-
-    // Store new OTP
-    db.prepare("INSERT INTO otps (email, otp, expires_at) VALUES (?, ?, ?)").run(email, otp, expiresAt);
-
-    // Send email
-    try {
-      const transport = await getTransporter();
-      const info = await transport.sendMail({
-        from: '"EduAid" <noreply@eduaid.in>',
-        to: email,
-        subject: "Your OTP for EduAid Registration",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #2563eb;">EduAid</h2>
-            <p>Your OTP for registration is:</p>
-            <div style="background: #f0f4ff; padding: 20px; text-align: center; border-radius: 8px; margin: 20px 0;">
-              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af;">${otp}</span>
-            </div>
-            <p style="color: #666;">This OTP is valid for 10 minutes. Do not share it with anyone.</p>
-          </div>
-        `,
-      });
-      console.log(`\n╔══════════════════════════════════════╗`);
-      console.log(`║  📧 OTP CODE: ${otp}                  ║`);
-      console.log(`║  📬 Email: ${email}`);
-      console.log(`╚══════════════════════════════════════╝\n`);
-      if (nodemailer.getTestMessageUrl(info)) {
-        console.log(`🔗 Preview: ${nodemailer.getTestMessageUrl(info)}\n`);
-      }
-    } catch (emailErr) {
-      console.log(`\n╔══════════════════════════════════════╗`);
-      console.log(`║  📧 OTP CODE: ${otp}                  ║`);
-      console.log(`║  📬 Email: ${email}`);
-      console.log(`║  ⚠️  Email send failed, use OTP above ║`);
-      console.log(`╚══════════════════════════════════════╝\n`);
-    }
-
-    // Mask email for response
-    const parts = email.split("@");
-    const masked = parts[0].substring(0, 3) + "****@" + parts[1];
-
-    res.json({ success: true, email_masked: masked, message: "OTP sent successfully" });
-  } catch (err) {
-    console.error("Send OTP error:", err);
-    res.status(500).json({ success: false, detail: "Failed to send OTP" });
-  }
-});
-
-// ==================== VERIFY OTP ====================
-router.post("/auth/verify-otp", (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ success: false, detail: "Email and OTP are required" });
-    }
-
-    const otpRecord = db.prepare(
-      "SELECT * FROM otps WHERE email = ? AND otp = ? AND used = 0 ORDER BY created_at DESC LIMIT 1"
-    ).get(email, otp);
-
-    if (!otpRecord) {
-      return res.status(400).json({ success: false, detail: "Invalid OTP" });
-    }
-
-    if (new Date(otpRecord.expires_at) < new Date()) {
-      return res.status(400).json({ success: false, detail: "OTP has expired. Please request a new one." });
-    }
-
-    // Mark OTP as used
-    db.prepare("UPDATE otps SET used = 1 WHERE id = ?").run(otpRecord.id);
-
-    res.json({ success: true, message: "OTP verified successfully" });
-  } catch (err) {
-    console.error("Verify OTP error:", err);
-    res.status(500).json({ success: false, detail: "OTP verification failed" });
-  }
-});
-
-// ==================== REGISTER ====================
-router.post("/auth/register", async (req, res) => {
-  try {
-    const { full_name, email, phone, password, dob, college_name, last_exam_date } = req.body;
-
-    if (!full_name || !email || !phone || !password) {
-      return res.status(400).json({ success: false, detail: "All fields are required" });
-    }
-
-    // Check if already registered
-    const existing = db.prepare("SELECT id FROM users WHERE email = ? OR phone = ?").get(email, phone);
+    // Check if already registered in SQLite
+    const existing = db.prepare("SELECT id FROM users WHERE firebase_uid = ?").get(firebaseUid);
     if (existing) {
+      return res.status(400).json({ success: false, detail: "User already registered" });
+    }
+
+    // Check if email or phone already exists
+    const existingEmail = db.prepare("SELECT id FROM users WHERE email = ? OR phone = ?").get(email, phone);
+    if (existingEmail) {
       return res.status(400).json({ success: false, detail: "User already registered with this email or phone" });
     }
 
@@ -147,13 +43,11 @@ router.post("/auth/register", async (req, res) => {
     }
 
     // Age calculation and verification from DOB
-    let calculatedAge = null;
     if (dob) {
       const birthYear = new Date(dob).getFullYear();
       const currentYear = new Date().getFullYear();
-      calculatedAge = currentYear - birthYear;
-      
-      // Verification rule: reject if age is > 40
+      const calculatedAge = currentYear - birthYear;
+
       if (calculatedAge > 40) {
         return res.status(400).json({
           success: false,
@@ -162,62 +56,42 @@ router.post("/auth/register", async (req, res) => {
       }
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
+    // Create user in SQLite
     const userId = uuidv4();
     db.prepare(`
-      INSERT INTO users (id, full_name, email, phone, password, dob, college_name, last_exam_date, role)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'USER')
-    `).run(userId, full_name, email, phone, hashedPassword, dob || null, college_name || '', last_exam_date || null);
+      INSERT INTO users (id, firebase_uid, full_name, email, phone, password, dob, college_name, last_exam_date, role)
+      VALUES (?, ?, ?, ?, ?, '', ?, ?, ?, 'USER')
+    `).run(userId, firebaseUid, full_name, email, phone, dob || null, college_name || '', last_exam_date || null);
 
-    // Generate token
-    const user = { id: userId, full_name, email, phone, role: "USER", college_name: college_name || '' };
-    const token = jwt.sign({ id: userId, role: "USER" }, JWT_SECRET, { expiresIn: "7d" });
+    const user = {
+      id: userId,
+      _id: userId,
+      full_name,
+      email,
+      phone,
+      role: "USER",
+      college_name: college_name || '',
+      dob: dob || null,
+      language: 'en'
+    };
 
-    res.json({ success: true, user, token });
+    res.json({ success: true, user });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ success: false, detail: "Registration failed" });
   }
 });
 
-// ==================== LOGIN ====================
-router.post("/auth/login", async (req, res) => {
+// ==================== GET PROFILE (after Firebase login) ====================
+// Frontend signs in with Firebase, then calls this to get the SQLite profile
+router.get("/auth/profile", verifyFirebaseToken, async (req, res) => {
   try {
-    const { phone, password, loginType } = req.body;
+    const firebaseUid = req.firebaseUser.uid;
 
-    // 'phone' field now accepts either phone number or email
-    const identifier = phone;
-    if (!identifier || !password) {
-      return res.status(400).json({ success: false, detail: "Phone/Email and password are required" });
-    }
-
-    // Auto-detect: if it contains '@', search by email; otherwise search by phone
-    let user;
-    if (identifier.includes('@')) {
-      user = db.prepare("SELECT * FROM users WHERE email = ?").get(identifier);
-    } else {
-      user = db.prepare("SELECT * FROM users WHERE phone = ?").get(identifier);
-    }
+    const user = db.prepare("SELECT * FROM users WHERE firebase_uid = ?").get(firebaseUid);
     if (!user) {
-      return res.status(401).json({ success: false, detail: "Invalid credentials. User not found." });
+      return res.status(404).json({ success: false, detail: "User profile not found. Please register first." });
     }
-
-    // Check password
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ success: false, detail: "Invalid credentials. Wrong password." });
-    }
-
-    // Check role match
-    if (loginType === "ADMIN" && user.role !== "ADMIN") {
-      return res.status(403).json({ success: false, detail: "This account is not an admin account." });
-    }
-
-    // Generate token
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     const userData = {
       id: user.id,
@@ -231,10 +105,10 @@ router.post("/auth/login", async (req, res) => {
       language: user.language
     };
 
-    res.json({ success: true, user: userData, token });
+    res.json({ success: true, user: userData });
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ success: false, detail: "Login failed" });
+    console.error("Profile error:", err);
+    res.status(500).json({ success: false, detail: "Failed to get profile" });
   }
 });
 
@@ -249,6 +123,86 @@ router.post("/auth/set-language", (req, res) => {
     res.json({ success: true, message: "Language updated" });
   } catch (err) {
     res.status(500).json({ success: false, detail: "Failed to update language" });
+  }
+});
+
+// ==================== SAVE FCM TOKEN ====================
+router.post("/auth/fcm-token", verifyFirebaseToken, (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ success: false, detail: "FCM token is required" });
+    }
+
+    if (!req.dbUser) {
+      return res.status(404).json({ success: false, detail: "User not found" });
+    }
+
+    db.prepare("UPDATE users SET fcm_token = ? WHERE id = ?").run(token, req.dbUser.id);
+    res.json({ success: true, message: "FCM token saved" });
+  } catch (err) {
+    console.error("FCM token save error:", err);
+    res.status(500).json({ success: false, detail: "Failed to save FCM token" });
+  }
+});
+
+// ==================== LOOKUP EMAIL BY PHONE (for phone-based login) ====================
+router.post("/auth/lookup-email", (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ success: false, detail: "Phone number is required" });
+    }
+
+    const user = db.prepare("SELECT email FROM users WHERE phone = ?").get(phone);
+    if (!user) {
+      return res.status(404).json({ success: false, detail: "No account found with this phone number" });
+    }
+
+    // Return masked email for security + full email for login
+    const parts = user.email.split("@");
+    const masked = parts[0].substring(0, 3) + "****@" + parts[1];
+
+    res.json({ success: true, email: user.email, email_masked: masked });
+  } catch (err) {
+    console.error("Lookup email error:", err);
+    res.status(500).json({ success: false, detail: "Lookup failed" });
+  }
+});
+
+// ==================== ADMIN: GET VERIFICATION QUEUE ====================
+// Returns students who clicked on a scholarship for the first time and need verification
+router.get("/auth/admin/verification-queue", (req, res) => {
+  try {
+    const students = db.prepare(`
+      SELECT id, full_name, email, phone, college_name, verification_status, verification_requested, created_at
+      FROM users
+      WHERE role = 'USER' AND (verification_requested = 1 OR verification_status = 'pending')
+      ORDER BY verification_requested DESC, created_at ASC
+    `).all();
+    res.json({ success: true, students });
+  } catch (err) {
+    res.status(500).json({ success: false, detail: "Failed to fetch verification queue" });
+  }
+});
+
+// ==================== ADMIN: VERIFY STUDENT PROFILE ====================
+router.post("/auth/admin/verify-student/:id", (req, res) => {
+  try {
+    const { status } = req.body;
+    const studentId = req.params.id;
+
+    if (!['verified', 'rejected', 'pending'].includes(status)) {
+      return res.status(400).json({ success: false, detail: "Invalid status" });
+    }
+
+    db.prepare("UPDATE users SET verification_status = ?, is_verified = ?, verification_requested = 0 WHERE id = ?")
+      .run(status, status === 'verified' ? 1 : 0, studentId);
+
+    res.json({ success: true, message: `Student profile ${status}` });
+  } catch (err) {
+    console.error("Verify student error:", err);
+    res.status(500).json({ success: false, detail: "Failed to update verification status" });
   }
 });
 

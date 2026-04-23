@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Phone, Lock, ArrowLeft } from 'lucide-react';
+import { Shield, Lock, ArrowLeft, Mail } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const API = `${BACKEND_URL}/api`;
 
 function AdminLogin({ onLogin }) {
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,15 +25,42 @@ function AdminLogin({ onLogin }) {
     setError(''); setLoading(true);
 
     try {
-      const response = await axios.post(`${API}/auth/login`, { phone, password, loginType: 'ADMIN' });
+      // Step 1: Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      // Step 2: Fetch profile from backend
+      const response = await axios.get(`${API}/auth/profile`, {
+        headers: { Authorization: `Bearer ${idToken}` }
+      });
+
       if (response.data.success) {
-        onLogin(response.data.user);
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('role', response.data.user.role);
+        const userData = response.data.user;
+
+        // Verify admin role
+        if (userData.role !== 'ADMIN') {
+          setError('This account is not an admin account.');
+          return;
+        }
+
+        onLogin(userData);
+        localStorage.setItem('token', idToken);
+        localStorage.setItem('role', userData.role);
         navigate('/admin/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Invalid admin credentials.');
+      const firebaseCode = err?.code;
+      if (firebaseCode === 'auth/user-not-found' || firebaseCode === 'auth/invalid-credential') {
+        setError('Invalid admin credentials. Please check email and password.');
+      } else if (firebaseCode === 'auth/wrong-password') {
+        setError('Wrong password. Please try again.');
+      } else if (firebaseCode === 'auth/too-many-requests') {
+        setError('Too many failed login attempts. Please try again later.');
+      } else if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError('Login failed. Invalid admin credentials.');
+      }
     } finally { setLoading(false); }
   };
 
@@ -64,18 +93,9 @@ function AdminLogin({ onLogin }) {
               <CardContent className="space-y-5">
                 {error && <Alert variant="destructive" className="bg-red-50 border-red-200"><AlertDescription className="text-red-700 font-medium">{error}</AlertDescription></Alert>}
 
-                <div className="space-y-1.5 border-2 border-slate-100 bg-slate-50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                     <Shield className="h-4 w-4 text-emerald-600"/>
-                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Administrator Credentials</span>
-                  </div>
-                  <p className="text-xs text-slate-700 font-medium">Username: <strong className="text-slate-900">9999999999</strong></p>
-                  <p className="text-xs text-slate-700 font-medium">Password: <strong className="text-slate-900">admin123</strong></p>
-                </div>
-
                 <div className="space-y-2">
-                  <Label className="text-slate-700 font-bold uppercase text-xs tracking-wider pl-1"><Phone className="inline h-3.5 w-3.5 mr-1 text-emerald-600" />Admin Phone</Label>
-                  <Input type="tel" placeholder="10-digit mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} required
+                  <Label className="text-slate-700 font-bold uppercase text-xs tracking-wider pl-1"><Mail className="inline h-3.5 w-3.5 mr-1 text-emerald-600" />Admin Email</Label>
+                  <Input type="email" placeholder="admin@test.com" value={email} onChange={(e) => setEmail(e.target.value)} required
                     className="bg-white border-slate-300 text-slate-900 placeholder:text-slate-300 focus:border-emerald-500 focus:ring-emerald-500 font-medium py-6" />
                 </div>
                 <div className="space-y-2">

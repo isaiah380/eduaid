@@ -16,15 +16,17 @@ db.pragma('foreign_keys = ON');
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
+    firebase_uid TEXT UNIQUE,
     full_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     phone TEXT NOT NULL,
-    password TEXT NOT NULL,
+    password TEXT DEFAULT '',
     dob TEXT,
     college_name TEXT DEFAULT '',
     last_exam_date TEXT,
     role TEXT DEFAULT 'USER',
     language TEXT DEFAULT 'en',
+    fcm_token TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
 
@@ -106,6 +108,22 @@ db.exec(`
   );
 `);
 
+// ============== ADD firebase_uid AND fcm_token COLUMNS IF MISSING ==============
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN firebase_uid TEXT`);
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_firebase_uid ON users(firebase_uid)`);
+  console.log('✅ Added firebase_uid column to users table');
+} catch (e) {
+  // Column already exists, ignore
+}
+
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN fcm_token TEXT`);
+  console.log('✅ Added fcm_token column to users table');
+} catch (e) {
+  // Column already exists, ignore
+}
+
 // ============== INIT & SEED ==============
 export async function initDB() {
   const bcrypt = await import('bcryptjs');
@@ -117,7 +135,7 @@ export async function initDB() {
     const hashedPassword = bcrypt.default.hashSync('admin123', 10);
     db.prepare(`INSERT INTO users (id, full_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, ?)`)
       .run(uuidv4(), 'Admin User', 'admin@test.com', '9999999999', hashedPassword, 'ADMIN');
-    console.log('✅ Seeded admin user (phone: 9999999999 / password: admin123)');
+    console.log('✅ Seeded admin user (email: admin@test.com / password: admin123)');
   }
 
   // Seed scholarships
@@ -160,5 +178,23 @@ export async function initDB() {
     } catch (e) { console.error('Benefit seed error:', e.message); }
   }
 }
+
+// Added verification and profile columns to users table
+const columns = [
+  "ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN verification_status TEXT DEFAULT 'pending'",
+  "ALTER TABLE users ADD COLUMN annual_income INTEGER",
+  "ALTER TABLE users ADD COLUMN marks_percentage REAL",
+  "ALTER TABLE users ADD COLUMN verification_requested INTEGER DEFAULT 0"
+];
+
+for (const sql of columns) {
+  try {
+    db.exec(sql);
+  } catch (e) {
+    // Column might already exist
+  }
+}
+console.log("✅ Database schema migration check complete");
 
 export default db;

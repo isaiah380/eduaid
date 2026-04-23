@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock, CheckCircle, XCircle, Trash2, Plus, X, Download } from "lucide-react";
+import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock, CheckCircle, XCircle, Trash2, Plus, X, Download, Globe } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 const API = `${BACKEND_URL}/api`;
@@ -19,6 +19,17 @@ function AdminDashboard({ user, onLogout }) {
   
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentDetailsLoading, setStudentDetailsLoading] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addingSch, setAddingSch] = useState(false);
+  const [newSch, setNewSch] = useState({
+    name: '',
+    description: '',
+    link: '',
+    type: 'MERIT',
+    provider: '',
+    amount: '',
+    deadline: ''
+  });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (user?.role !== "ADMIN") navigate("/"); else loadData(); }, [user, navigate]);
@@ -36,13 +47,13 @@ function AdminDashboard({ user, onLogout }) {
         axios.get(`${API}/scholarships`),
         axios.get(`${API}/admin/views`),
         axios.get(`${API}/applications/admin/students`),
-        axios.get(`${API}/documents/admin/pending`)
+        axios.get(`${API}/auth/admin/verification-queue`)
       ]);
       if (statRes.data.success) setStats(statRes.data);
       if (schRes.data.success) setScholarships(schRes.data.scholarships);
       if (viewRes.data.success) setViews(viewRes.data.views);
       if (studRes.data.success) setStudents(studRes.data.students);
-      if (docRes.data.success) setPendingDocs(docRes.data.documents);
+      if (docRes.data.success) setPendingDocs(docRes.data.students);
     } catch (err) { console.error("Admin load error", err); }
   };
 
@@ -79,6 +90,15 @@ function AdminDashboard({ user, onLogout }) {
     } catch (err) { alert("Failed to update verification status"); }
   };
 
+  const handleVerifyStudent = async (id, status) => {
+    if (!window.confirm(`Are you sure you want to ${status} this student profile?`)) return;
+    try {
+      await axios.post(`${API}/auth/admin/verify-student/${id}`, { status });
+      setSelectedStudent(null);
+      fetchLatest();
+    } catch (err) { alert("Failed to update student verification status"); }
+  };
+
   const loadStudentDetails = async (id) => {
     setStudentDetailsLoading(true);
     try {
@@ -89,6 +109,35 @@ function AdminDashboard({ user, onLogout }) {
     } catch (err) { alert("Failed to load details"); }
     setStudentDetailsLoading(false);
   };
+
+  const handleAddScholarship = async (e) => {
+    e.preventDefault();
+    if (!newSch.name || !newSch.description || !newSch.link) {
+      alert("Please fill in Name, Overview and URL");
+      return;
+    }
+    setAddingSch(true);
+    try {
+      const res = await axios.post(`${API}/scholarships`, newSch);
+      if (res.data.success) {
+        setIsAddModalOpen(false);
+        setNewSch({ name: '', description: '', link: '', type: 'MERIT', provider: '', amount: '', deadline: '' });
+        fetchLatest();
+        alert("Scholarship added successfully!");
+      }
+    } catch (err) {
+      alert("Failed to add scholarship");
+    }
+    setAddingSch(false);
+  };
+
+  const studentsWithPendingDocs = (pendingDocs || []).map(s => ({
+    id: s.id,
+    name: s.full_name,
+    email: s.email,
+    college: s.college_name,
+    count: s.verification_requested ? 'REQUESTED' : 'PENDING'
+  }));
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans flex flex-col relative">
@@ -164,7 +213,7 @@ function AdminDashboard({ user, onLogout }) {
                   </div>
                   <div className="bg-white border text-left rounded-2xl p-6 shadow-sm border-slate-200 relative overflow-hidden flex flex-col justify-between">
                      <div className="absolute -top-10 -right-10 w-32 h-32 bg-red-50 rounded-full"></div>
-                     <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Pending Docs</p>
+                     <p className="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">Verification Requests</p>
                      <p className="text-4xl font-black text-red-500">{pendingDocs.length}</p>
                   </div>
                 </div>
@@ -261,17 +310,17 @@ function AdminDashboard({ user, onLogout }) {
             {/* Verifications Tab */}
             {activeTab === "verifications" && (
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-amber-500" /> Document Verification Queue
-                    <span className="bg-amber-100 text-amber-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{pendingDocs.length}</span>
+                    <CheckCircle className="h-5 w-5 text-emerald-500" /> Student Verification Queue
+                    <span className="bg-emerald-100 text-emerald-700 text-xs font-black px-2.5 py-1 rounded-full ml-2">{studentsWithPendingDocs.length} Students Pending</span>
                   </h3>
                    <button onClick={fetchLatest} className="text-slate-500 hover:text-emerald-600"><RefreshCw className="h-4 w-4" /></button>
                 </div>
-                {pendingDocs.length === 0 ? (
-                  <div className="text-center py-16">
-                    <CheckCircle className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 font-bold">No documents pending verification</p>
+                {studentsWithPendingDocs.length === 0 ? (
+                  <div className="text-center py-20 bg-slate-50/50">
+                    <CheckCircle className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+                    <p className="text-slate-400 font-bold">All student reports verified!</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -279,28 +328,31 @@ function AdminDashboard({ user, onLogout }) {
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
                           <th className="p-4 pl-6">Student</th>
-                          <th className="p-4">Document Type</th>
-                          <th className="p-4">File / OCR Data</th>
-                          <th className="p-4 text-right pr-6">Actions</th>
+                          <th className="p-4">College</th>
+                          <th className="p-4">Pending Docs</th>
+                          <th className="p-4 text-right pr-6">Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {pendingDocs.map((doc) => (
-                          <tr key={doc.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                        {studentsWithPendingDocs.map((s) => (
+                          <tr key={s.id} className="border-b border-slate-100 hover:bg-emerald-50/30 transition-colors">
                             <td className="p-4 pl-6">
-                                <p className="font-bold text-slate-800 text-sm">{doc.student_name}</p>
-                                <p className="text-xs text-slate-500">{doc.student_email}</p>
+                                <p className="font-bold text-slate-800 text-sm">{s.name}</p>
+                                <p className="text-xs text-slate-500">{s.email}</p>
                             </td>
-                            <td className="p-4 font-bold text-slate-600 text-sm uppercase tracking-wider">{doc.document_type.replace('_', ' ')}</td>
+                            <td className="p-4 text-slate-600 text-sm font-medium">{s.college || '-'}</td>
                             <td className="p-4">
-                              <a href={`${BACKEND_URL}/${doc.file_path}`} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1 font-bold text-sm mb-1">
-                                <FileText className="h-4 w-4" /> {doc.file_name}
-                              </a>
-                              <p className="text-xs text-slate-500 max-w-sm truncate" title={doc.ocr_result}>{doc.ocr_result || 'No OCR data'}</p>
+                                {s.count === 'REQUESTED' ? (
+                                  <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-md text-[10px] font-black animate-pulse">VERIFICATION REQUESTED</span>
+                                ) : (
+                                  <span className="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] font-black">PENDING REVIEW</span>
+                                )}
                             </td>
-                            <td className="p-4 text-right pr-6 space-x-2 flex justify-end">
-                                <button onClick={() => handleVerifyDocument(doc.id, 'verified')} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Approve</button>
-                                <button onClick={() => handleVerifyDocument(doc.id, 'rejected')} className="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">Reject</button>
+                            <td className="p-4 text-right pr-6">
+                                <button onClick={() => loadStudentDetails(s.id)} 
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 ml-auto">
+                                  <FileText className="h-3 w-3" /> View Student Report
+                                </button>
                             </td>
                           </tr>
                         ))}
@@ -318,7 +370,7 @@ function AdminDashboard({ user, onLogout }) {
                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                      <Award className="h-5 w-5 text-indigo-500" /> Managed Scholarships
                    </h3>
-                   <button onClick={() => navigate('/admin/add-scholarship')} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                   <button onClick={() => setIsAddModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
                      <Plus className="h-4 w-4" /> Add Scholarship
                    </button>
                 </div>
@@ -447,12 +499,12 @@ function AdminDashboard({ user, onLogout }) {
                         <p className="font-medium text-slate-600">{selectedStudent.student.email}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Phone</p>
-                        <p className="font-medium text-slate-600">{selectedStudent.student.phone}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Income (Verified)</p>
+                        <p className="font-bold text-emerald-700">{selectedStudent.student.annual_income ? `₹${selectedStudent.student.annual_income.toLocaleString()}` : 'Not extracted'}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">College</p>
-                        <p className="font-medium text-slate-600">{selectedStudent.student.college_name || 'N/A'}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Marks (Verified)</p>
+                        <p className="font-bold text-blue-700">{selectedStudent.student.marks_percentage ? `${selectedStudent.student.marks_percentage}%` : 'Not extracted'}</p>
                       </div>
                     </div>
                   </div>
@@ -512,8 +564,115 @@ function AdminDashboard({ user, onLogout }) {
                       )}
                     </div>
                   </div>
+
+                  {/* Verification Action Bar (Visible only to Admin in Modal) */}
+                  <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                     <div>
+                       <p className="text-sm font-bold text-slate-800 tracking-tight">Final Verification Decision</p>
+                       <p className="text-xs text-slate-500 font-medium tracking-wide">Review the entire student report above before making a decision.</p>
+                     </div>
+                     <div className="flex gap-3 w-full sm:w-auto">
+                       <button onClick={() => handleVerifyStudent(selectedStudent.student.id, 'rejected')} 
+                         className="flex-1 sm:flex-none bg-red-50 text-red-700 hover:bg-red-100 px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest border border-red-200 transition-all">
+                         Reject Report
+                       </button>
+                       <button onClick={() => handleVerifyStudent(selectedStudent.student.id, 'verified')} 
+                         className="flex-1 sm:flex-none bg-emerald-600 text-white hover:bg-emerald-700 px-8 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all">
+                         Approve Student
+                       </button>
+                     </div>
+                  </div>
                 </div>
-             ) : null}
+             ) : (
+                <div className="p-12 text-center text-slate-400">Student not found</div>
+             )}
+          </div>
+        </div>
+      )}
+
+      {/* Add Scholarship Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-8 max-w-xl w-full my-8 shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Plus className="h-5 w-5 text-indigo-600" /> Create New Scholarship
+              </h2>
+              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-red-500 p-2 rounded-xl transition-colors">
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddScholarship} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Scholarship Name</label>
+                <input type="text" required value={newSch.name} onChange={(e) => setNewSch({...newSch, name: e.target.value})}
+                  placeholder="e.g. HDFC Badhte Kadam Scholarship"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Overview / Description</label>
+                <textarea required rows="3" value={newSch.description} onChange={(e) => setNewSch({...newSch, description: e.target.value})}
+                  placeholder="Briefly describe the scholarship goals and benefits..."
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium resize-none" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Scholarship Portal URL</label>
+                <div className="relative">
+                  <Globe className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input type="url" required value={newSch.link} onChange={(e) => setNewSch({...newSch, link: e.target.value})}
+                    placeholder="https://scholarship-portal.com/apply"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Type</label>
+                  <select value={newSch.type} onChange={(e) => setNewSch({...newSch, type: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium">
+                    <option value="MERIT">Merit Based</option>
+                    <option value="NEED">Need Based</option>
+                    <option value="GIRL_CHILD">Girls Only</option>
+                    <option value="MINORITY">Minority Specific</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Provider</label>
+                  <input type="text" value={newSch.provider} onChange={(e) => setNewSch({...newSch, provider: e.target.value})}
+                    placeholder="e.g. Tata Trusts"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Amount / Benefit</label>
+                  <input type="text" value={newSch.amount} onChange={(e) => setNewSch({...newSch, amount: e.target.value})}
+                    placeholder="e.g. ₹50,000 / year"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Deadline</label>
+                  <input type="date" value={newSch.deadline} onChange={(e) => setNewSch({...newSch, deadline: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setIsAddModalOpen(false)}
+                  className="flex-1 px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-200 transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={addingSch}
+                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 flex items-center justify-center gap-2">
+                  {addingSch ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  Create Scholarship
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

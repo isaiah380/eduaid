@@ -1,6 +1,7 @@
 import express from "express";
 import db from "../db.js";
 import { v4 as uuidv4 } from "uuid";
+import { notifyApplicationStatus } from "../utils/notifications.js";
 
 const router = express.Router();
 
@@ -101,7 +102,7 @@ router.get("/applications/admin/students/:id/details", (req, res) => {
   try {
     const studentId = req.params.id;
     // Get student profile
-    const student = db.prepare("SELECT id, full_name, email, phone, college_name, dob, created_at, role, language FROM users WHERE id = ?").get(studentId);
+    const student = db.prepare("SELECT id, full_name, email, phone, college_name, dob, created_at, role, language, annual_income, marks_percentage FROM users WHERE id = ?").get(studentId);
     if (!student) {
       return res.status(404).json({ success: false, detail: "Student not found" });
     }
@@ -132,10 +133,21 @@ router.post("/scholarships/view", (req, res) => {
     if (!user_id || !scholarship_id) {
       return res.status(400).json({ success: false, detail: "user_id and scholarship_id are required" });
     }
-    // INSERT OR IGNORE ensures only the first view is recorded
+
+    // Check if this is the user's first ever scholarship click
+    const viewCount = db.prepare("SELECT COUNT(*) as c FROM scholarship_views WHERE user_id = ?").get(user_id).c;
+
+    // INSERT OR IGNORE ensures only the first view of THIS specific scholarship is recorded
     db.prepare(
       "INSERT OR IGNORE INTO scholarship_views (user_id, scholarship_id) VALUES (?, ?)"
     ).run(user_id, scholarship_id);
+
+    // If first time clicking ANY scholarship, flag for verification if not already verified
+    if (viewCount === 0) {
+      db.prepare("UPDATE users SET verification_requested = 1 WHERE id = ? AND verification_status = 'pending'")
+        .run(user_id);
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error("View log error:", err);
@@ -210,10 +222,25 @@ router.get("/admin/views", (req, res) => {
 });
 
 // ==================== ADMIN: UPDATE APPLICATION STATUS ====================
-router.post("/admin/applications/:appId/status", (req, res) => {
+router.post("/admin/applications/:appId/status", async (req, res) => {
   try {
     const { status } = req.body;
+
+    // Get application info for notification before updating
+    const app = db.prepare(`
+      SELECT a.user_id, s.name as scholarship_name
+      FROM applications a
+      JOIN scholarships s ON a.scholarship_id = s.id
+      WHERE a.id = ?
+    `).get(req.params.appId);
+
     db.prepare("UPDATE applications SET status = ? WHERE id = ?").run(status, req.params.appId);
+
+    // Send push notification to the student
+    if (app) {
+      notifyApplicationStatus(app.user_id, app.scholarship_name, status).catch(() => {});
+    }
+
     res.json({ success: true, message: "Status updated" });
   } catch (err) {
     res.status(500).json({ success: false, detail: "Failed to update status" });

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,24 +56,43 @@ function Register({ onLogin }) {
     setLoading(true);
 
     try {
-      // Register directly without OTP for demonstration
+      // Step 1: Create Firebase account
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const idToken = await userCredential.user.getIdToken();
+
+      // Step 2: Create profile in backend (SQLite)
       const registerRes = await axios.post(`${API}/auth/register`, {
-        full_name: formData.full_name, email: formData.email, phone: formData.phone,
-        password: formData.password, dob: formData.dob || null,
-        college_name: formData.college_name, last_exam_date: formData.last_exam_date || null
+        full_name: formData.full_name,
+        phone: formData.phone,
+        dob: formData.dob || null,
+        college_name: formData.college_name,
+        last_exam_date: formData.last_exam_date || null
+      }, {
+        headers: { Authorization: `Bearer ${idToken}` }
       });
 
       if (registerRes.data.success) {
         setSuccess('Registration successful! Redirecting...');
+        localStorage.setItem('token', idToken);
+        localStorage.setItem('role', registerRes.data.user.role);
+
         setTimeout(() => {
           onLogin(registerRes.data.user);
-          localStorage.setItem('token', registerRes.data.token);
-          localStorage.setItem('role', registerRes.data.user.role);
           navigate('/select-language');
         }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed. User may already exist.');
+      // Handle Firebase errors
+      const firebaseCode = err?.code;
+      if (firebaseCode === 'auth/email-already-in-use') {
+        setError('This email is already registered. Please login instead.');
+      } else if (firebaseCode === 'auth/weak-password') {
+        setError('Password is too weak. Please use at least 6 characters.');
+      } else if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally { setLoading(false); }
   };
 
@@ -109,7 +130,7 @@ function Register({ onLogin }) {
                 {success && <Alert className="bg-emerald-50 border-emerald-200"><AlertDescription className="text-emerald-700 font-bold flex items-center gap-2 tracking-wide"><CheckCircle className="h-5 w-5"/> {success}</AlertDescription></Alert>}
 
                 <div className="space-y-1.5 border border-slate-200 bg-slate-50 p-4 rounded-xl">
-                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 text-center text-blue-600">Quick Registration — No Email Verification Required</p>
+                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 text-center text-blue-600">🔥 Firebase Secured Registration</p>
                 </div>
 
                 <div className="space-y-2">

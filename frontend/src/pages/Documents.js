@@ -215,7 +215,10 @@ function Documents(props) {
                 <select value={selectedType} onChange={function(e) { setSelectedType(e.target.value); setVerificationResult(null); }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
                   <option value="">Select document type...</option>
-                  {DOC_TYPES.map(function(dt) { return <option key={dt.value} value={dt.value}>{dt.label}</option>; })}
+                  {DOC_TYPES.filter(function(dt) {
+                    // Check if this type is already verified
+                    return !documents.some(function(d) { return d.document_type === dt.value && d.is_verified; });
+                  }).map(function(dt) { return <option key={dt.value} value={dt.value}>{dt.label}</option>; })}
                 </select>
               </div>
 

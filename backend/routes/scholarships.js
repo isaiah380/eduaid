@@ -95,19 +95,19 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
       "SELECT * FROM documents WHERE user_id = ? AND verification_status = 'verified'"
     ).all(req.params.userId);
 
-    // Extract profile data from verified documents
+    // Extract profile data from verified documents and user record
     const profile = {
-      hasAadhaar: false,
-      hasIncomeCert: false,
-      hasCasteCert: false,
-      has10thMarksheet: false,
-      has12thMarksheet: false,
-      income: null,
+      hasAadhaar: verifiedDocs.some(d => d.document_type === 'aadhar'),
+      hasIncomeCert: verifiedDocs.some(d => d.document_type === 'income_certificate'),
+      hasCasteCert: verifiedDocs.some(d => d.document_type === 'caste_certificate'),
+      has10thMarksheet: verifiedDocs.some(d => d.document_type === '10th_marksheet'),
+      has12thMarksheet: verifiedDocs.some(d => d.document_type === '12th_marksheet'),
+      income: user.annual_income || null,
       category: null,
       age: null,
       percentage10th: null,
-      percentage12th: null,
-      verifiedDocTypes: []
+      percentage12th: user.marks_percentage || null,
+      verifiedDocTypes: verifiedDocs.map(d => d.document_type)
     };
 
     // 1. Base age on registered DOB if available
@@ -119,37 +119,27 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
     }
 
     for (const doc of verifiedDocs) {
-      profile.verifiedDocTypes.push(doc.document_type);
       const ocr = doc.ocr_result || '';
 
       if (doc.document_type === 'aadhar') {
-        profile.hasAadhaar = true;
         const ageMatch = ocr.match(/Age:\s*(\d+)/i);
-        if (ageMatch) profile.age = parseInt(ageMatch[1]);
+        if (ageMatch && !profile.age) profile.age = parseInt(ageMatch[1]);
       }
-      if (doc.document_type === 'income_certificate') {
-        profile.hasIncomeCert = true;
+      if (doc.document_type === 'income_certificate' && !profile.income) {
         const incMatch = ocr.match(/Income:\s*₹([\d,]+)/i);
         if (incMatch) profile.income = parseInt(incMatch[1].replace(/,/g, ''));
       }
       if (doc.document_type === 'caste_certificate') {
-        profile.hasCasteCert = true;
         const catMatch = ocr.match(/Category:\s*([A-Z]+)/i);
         if (catMatch) profile.category = catMatch[1].trim();
       }
-      if (doc.document_type === '10th_marksheet') {
-        profile.has10thMarksheet = true;
+      if (doc.document_type === '10th_marksheet' && !profile.percentage10th) {
         const pctMatch = ocr.match(/Extracted Percentage:\s*([0-9.]+)%/i);
         if (pctMatch) profile.percentage10th = parseFloat(pctMatch[1]);
-        const ageMatch = ocr.match(/Age:\s*(\d+)/i);
-        if (ageMatch && !profile.age) profile.age = parseInt(ageMatch[1]);
       }
-      if (doc.document_type === '12th_marksheet') {
-        profile.has12thMarksheet = true;
+      if (doc.document_type === '12th_marksheet' && !profile.percentage12th) {
         const pctMatch = ocr.match(/Extracted Percentage:\s*([0-9.]+)%/i);
         if (pctMatch) profile.percentage12th = parseFloat(pctMatch[1]);
-        const ageMatch = ocr.match(/Age:\s*(\d+)/i);
-        if (ageMatch && !profile.age) profile.age = parseInt(ageMatch[1]);
       }
     }
 

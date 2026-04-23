@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { GraduationCap, FileText, BookOpen, LogOut, User, Award, Briefcase } from 'lucide-react';
+import { GraduationCap, FileText, BookOpen, LogOut, User, Award, Briefcase, Bell, X } from 'lucide-react';
 import { t } from '@/lib/i18n';
+import { auth, messaging } from '@/lib/firebase';
+import { getToken, onMessage } from 'firebase/messaging';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const API = `${BACKEND_URL}/api`;
@@ -14,6 +16,7 @@ function Dashboard({ user, onLogout }) {
   const [stats, setStats] = useState({ total_scholarships: 0, communities: [], education_levels: [] });
   const [documents, setDocuments] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [notification, setNotification] = useState(null);
 
   const fetchStats = async () => {
     try {
@@ -44,11 +47,83 @@ function Dashboard({ user, onLogout }) {
     fetchApplications();
   }, [fetchDocuments, fetchApplications]);
 
+  // ===== Firebase Cloud Messaging Setup =====
+  useEffect(() => {
+    async function setupFCM() {
+      try {
+        if (!messaging) return;
+
+        // Request notification permission
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('🔕 Notification permission denied');
+          return;
+        }
+
+        // Get FCM token
+        const fcmToken = await getToken(messaging, {
+          vapidKey: undefined // Will use default; generate VAPID key in Firebase Console for production
+        });
+
+        if (fcmToken) {
+          console.log('🔔 FCM Token obtained');
+
+          // Send token to backend
+          const idToken = await auth.currentUser?.getIdToken();
+          if (idToken) {
+            await axios.post(`${API}/auth/fcm-token`, { token: fcmToken }, {
+              headers: { Authorization: `Bearer ${idToken}` }
+            });
+            console.log('✅ FCM token saved to backend');
+          }
+        }
+
+        // Listen for foreground messages
+        onMessage(messaging, (payload) => {
+          console.log('📩 Foreground notification:', payload);
+          setNotification({
+            title: payload.notification?.title || 'New Notification',
+            body: payload.notification?.body || '',
+          });
+
+          // Auto-dismiss after 8 seconds
+          setTimeout(() => setNotification(null), 8000);
+
+          // Refresh data when notification arrives
+          fetchDocuments();
+          fetchApplications();
+        });
+      } catch (err) {
+        console.log('⚠️ FCM setup skipped:', err.message);
+      }
+    }
+
+    setupFCM();
+  }, [fetchDocuments, fetchApplications]);
+
   const handleLogout = () => { if (onLogout) onLogout(); navigate('/'); };
   const verifiedDocs = documents.filter(d => d.is_verified).length;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Push Notification Toast */}
+      {notification && (
+        <div className="fixed top-6 right-6 z-[100] animate-in slide-in-from-right-5 duration-300 max-w-sm">
+          <div className="bg-white border border-blue-200 shadow-2xl rounded-2xl p-5 flex items-start gap-4">
+            <div className="bg-blue-100 p-2.5 rounded-xl flex-shrink-0">
+              <Bell className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-800 font-bold text-sm">{notification.title}</p>
+              <p className="text-slate-500 text-xs mt-1 leading-relaxed">{notification.body}</p>
+            </div>
+            <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tricolor Accent Bar */}
       <div className="h-2 w-full flex fixed top-0 z-50">
         <div className="flex-1 bg-orange-500"></div>

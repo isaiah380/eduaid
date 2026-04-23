@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import { createRequire } from "module";
 import Tesseract from "tesseract.js";
+import { notifyDocumentVerified } from "../utils/notifications.js";
 
 const require = createRequire(import.meta.url);
 const pdfParseModule = require("pdf-parse");
@@ -462,9 +463,21 @@ router.post("/documents/verify/:id", async (req, res) => {
     console.log(`✅ Result: ${result.status} (confidence: ${result.confidence}%)`);
     console.log(`${'='.repeat(60)}\n`);
 
-    // Update database
+    // Update database for document
     db.prepare("UPDATE documents SET verification_status = ?, is_verified = ?, ocr_result = ? WHERE id = ?")
       .run(result.status, result.verified ? 1 : 0, result.reason, req.params.id);
+
+    // If verified, update user profile data
+    if (result.verified && result.extractedData) {
+      const data = result.extractedData;
+      if (doc.document_type === 'income_certificate' && data.income) {
+        db.prepare("UPDATE users SET annual_income = ? WHERE id = ?").run(data.income, doc.user_id);
+      }
+      if ((doc.document_type === '10th_marksheet' || doc.document_type === '12th_marksheet') && data.percentage) {
+        // Use best marks available or update if newer/better
+        db.prepare("UPDATE users SET marks_percentage = ? WHERE id = ?").run(data.percentage, doc.user_id);
+      }
+    }
 
     res.json({
       success: true,
@@ -474,7 +487,8 @@ router.post("/documents/verify/:id", async (req, res) => {
       digilocker_status: result.digilocker_status,
       confidence: result.confidence,
       warnings: result.warnings || [],
-      extraction_method: extraction.method
+      extraction_method: extraction.method,
+      extractedData: result.extractedData
     });
   } catch (err) {
     console.error("Verify error:", err);
@@ -499,7 +513,7 @@ router.get("/documents/admin/pending", (req, res) => {
 });
 
 // ==================== ADMIN: MANUAL VERIFY DOCUMENT ====================
-router.post("/documents/admin/verify/:id", (req, res) => {
+router.post("/documents/admin/verify/:id", async (req, res) => {
   try {
     const { status } = req.body; // 'verified' or 'rejected'
     if (!['verified', 'rejected'].includes(status)) {
@@ -516,12 +530,20 @@ router.post("/documents/admin/verify/:id", (req, res) => {
        ocrSuffix = " | Admin Approved.";
     }
 
+    // Get document info before updating (for notification)
+    const doc = db.prepare("SELECT user_id, document_type FROM documents WHERE id = ?").get(docId);
+
     db.prepare(`
       UPDATE documents 
       SET verification_status = ?, is_verified = ?, 
           ocr_result = COALESCE(ocr_result, '') || ? 
       WHERE id = ?
     `).run(status, isVerified, ocrSuffix, docId);
+
+    // Send push notification to the student
+    if (doc) {
+      notifyDocumentVerified(doc.user_id, doc.document_type, status).catch(() => {});
+    }
 
     res.json({ success: true, message: `Document ${status} successfully` });
   } catch (err) {
