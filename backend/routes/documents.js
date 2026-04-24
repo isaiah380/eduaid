@@ -291,28 +291,43 @@ function verifyDocumentContent(fileName, fileSize, mimeType, documentType, conte
   let finalReason = `${rules.label} VERIFIED — Content analysis passed. ` +
     `Matched: ${requiredMatches.join(', ')} | Official markers: ${govtMatches.join(', ')}.`;
 
+  const extractedData = {};
+
   // Extract percentage from marksheets
   if (['10th_marksheet', '12th_marksheet'].includes(documentType)) {
     let extractedPercentage = 0;
     let foundRealPct = false;
 
     if (contentText) {
-      const kwMatch = contentText.match(/(?:percentage|percent)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
+      // 1. Look for direct percentage
+      const kwMatch = contentText.match(/(?:percentage|percent|aggregate|total percent)[\s:a-zA-Z\-]{0,20}?([0-9]{2,3}(?:\.[0-9]+)?)(?!\d)/i);
       const pctSymbolMatch = contentText.match(/([0-9]{2,3}(?:\.[0-9]+)?)\s*%/i);
-      const fractionMatch = contentText.match(/([0-9]{2,4})\s*\/\s*([0-9]{2,4})/);
-      const cgpaMatch = contentText.match(/(?:cgpa|sgpa|gpa)[\s:a-zA-Z\-]{0,10}?([0-9](?:\.[0-9]+)?)/i);
+      
+      // 2. Look for obtained/total marks
+      const obtainedMatch = contentText.match(/(?:obtained|marks obtained|total marks obtained|score|grand total)[\s:a-zA-Z\-]{0,20}?(\d{3})/i);
+      const totalMatch = contentText.match(/(?:out of|total marks|maximum marks|max marks)[\s:a-zA-Z\-]{0,20}?(\d{3})/i);
+      
+      // 3. Look for fraction like 540/600
+      const fractionMatch = contentText.match(/([0-9]{2,4})\s*\/\s*([0-9]{3,4})/);
+      
+      // 4. Look for CGPA
+      const cgpaMatch = contentText.match(/(?:cgpa|sgpa|gpa|point average)[\s:a-zA-Z\-]{0,10}?([0-9](?:\.[0-9]+)?)/i);
 
       let rawVal = null;
-      if (fractionMatch && parseFloat(fractionMatch[2]) > 0) {
-        const max = parseFloat(fractionMatch[2]);
-        const obtained = parseFloat(fractionMatch[1]);
-        if (obtained <= max) rawVal = (obtained / max) * 100;
-      } else if (cgpaMatch && parseFloat(cgpaMatch[1]) <= 10) {
-        rawVal = parseFloat(cgpaMatch[1]) * 9.5;
-      } else if (kwMatch && kwMatch[1]) {
+      if (kwMatch && kwMatch[1]) {
         rawVal = parseFloat(kwMatch[1]);
       } else if (pctSymbolMatch && pctSymbolMatch[1]) {
         rawVal = parseFloat(pctSymbolMatch[1]);
+      } else if (fractionMatch && parseFloat(fractionMatch[2]) > 0) {
+        const obtained = parseFloat(fractionMatch[1]);
+        const max = parseFloat(fractionMatch[2]);
+        if (obtained <= max) rawVal = (obtained / max) * 100;
+      } else if (obtainedMatch && totalMatch) {
+        const obtained = parseFloat(obtainedMatch[1]);
+        const max = parseFloat(totalMatch[1]);
+        if (obtained <= max && max > 0) rawVal = (obtained / max) * 100;
+      } else if (cgpaMatch && parseFloat(cgpaMatch[1]) <= 10) {
+        rawVal = parseFloat(cgpaMatch[1]) * 9.5;
       }
 
       if (rawVal !== null && rawVal > 0 && rawVal <= 100) {
@@ -322,11 +337,16 @@ function verifyDocumentContent(fileName, fileSize, mimeType, documentType, conte
     }
 
     if (foundRealPct) {
-      extractedPercentage = extractedPercentage.toFixed(1);
+      extractedPercentage = parseFloat(extractedPercentage.toFixed(2));
+      extractedData.percentage = extractedPercentage;
       finalReason += ` Extracted Percentage: ${extractedPercentage}%`;
     } else {
       finalReason += ` Extracted Percentage: Could not extract from content.`;
     }
+
+    // Try to extract board
+    const boardMatch = contentText.match(/(?:board of|secondary education|state board|cbse|icse)[\s:a-zA-Z]*?([a-zA-Z\s]{4,30})/i);
+    if (boardMatch) extractedData.board = boardMatch[1].trim();
   }
 
   // Extract UID pattern from Aadhaar
@@ -334,11 +354,22 @@ function verifyDocumentContent(fileName, fileSize, mimeType, documentType, conte
     const uidMatch = contentText.match(/(\d{4}\s?\d{4}\s?\d{4})/);
     if (uidMatch) {
       const masked = 'XXXX-XXXX-' + uidMatch[1].replace(/\s/g, '').slice(-4);
+      extractedData.uid_last4 = masked;
       finalReason += ` UID: ${masked}`;
     }
-    const dobMatch = contentText.match(/(?:dob|date of birth|birth)[\s:]*(\d{2}[\/-]\d{2}[\/-]\d{4})/i);
+    const dobMatch = contentText.match(/(?:dob|date of birth|birth|जन्म)[\s:]*(\d{2}[\/-]\d{2}[\/-]\d{4})/i);
     if (dobMatch) {
+      extractedData.dob = dobMatch[1];
       finalReason += ` | DOB: ${dobMatch[1]}`;
+    }
+  }
+
+  // Extract Income
+  if (documentType === 'income_certificate') {
+    const incomeMatch = contentText.match(/(?:income|amount|rupees|rs\.?|एकूण उत्पन्न)[\s:a-zA-Z\-]{0,20}?(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/i);
+    if (incomeMatch) {
+      extractedData.income_amount = incomeMatch[1].replace(/,/g, '');
+      finalReason += ` | Income: ${extractedData.income_amount}`;
     }
   }
 
@@ -348,7 +379,9 @@ function verifyDocumentContent(fileName, fileSize, mimeType, documentType, conte
     reason: finalReason,
     warnings,
     digilocker_status: 'VERIFIED',
-    confidence
+    confidence,
+    extractedData,
+    matchedPatterns: [...new Set([...requiredMatches, ...strongMatches, ...govtMatches])]
   };
 }
 
@@ -470,12 +503,17 @@ router.post("/documents/verify/:id", async (req, res) => {
     // If verified, update user profile data
     if (result.verified && result.extractedData) {
       const data = result.extractedData;
-      if (doc.document_type === 'income_certificate' && data.income) {
-        db.prepare("UPDATE users SET annual_income = ? WHERE id = ?").run(data.income, doc.user_id);
+      if (doc.document_type === 'income_certificate' && data.income_amount) {
+        db.prepare("UPDATE users SET annual_income = ? WHERE id = ?").run(data.income_amount, doc.user_id);
       }
-      if ((doc.document_type === '10th_marksheet' || doc.document_type === '12th_marksheet') && data.percentage) {
-        // Use best marks available or update if newer/better
-        db.prepare("UPDATE users SET marks_percentage = ? WHERE id = ?").run(data.percentage, doc.user_id);
+      if (doc.document_type === '10th_marksheet' && data.percentage) {
+        db.prepare("UPDATE users SET marks_10th = ?, marks_percentage = ? WHERE id = ?").run(data.percentage, data.percentage, doc.user_id);
+      }
+      if (doc.document_type === '12th_marksheet' && data.percentage) {
+        db.prepare("UPDATE users SET marks_12th = ?, marks_percentage = ? WHERE id = ?").run(data.percentage, data.percentage, doc.user_id);
+      }
+      if (doc.document_type === 'aadhar' && data.dob) {
+        db.prepare("UPDATE users SET dob = ? WHERE id = ?").run(data.dob, doc.user_id);
       }
     }
 

@@ -185,6 +185,8 @@ const columns = [
   "ALTER TABLE users ADD COLUMN verification_status TEXT DEFAULT 'pending'",
   "ALTER TABLE users ADD COLUMN annual_income INTEGER",
   "ALTER TABLE users ADD COLUMN marks_percentage REAL",
+  "ALTER TABLE users ADD COLUMN marks_10th REAL",
+  "ALTER TABLE users ADD COLUMN marks_12th REAL",
   "ALTER TABLE users ADD COLUMN verification_requested INTEGER DEFAULT 0"
 ];
 

@@ -12,13 +12,25 @@ function Profile({ user, onLogout }) {
   const lang = localStorage.getItem('language') || 'en';
   const [applications, setApplications] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [profile, setProfile] = useState(user);
 
   useEffect(() => {
     if (user?.id) {
+      fetchProfile();
       fetchApplications();
       fetchDocuments();
     }
   }, [user]);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data.success) setProfile(res.data.user);
+    } catch (err) { console.error(err); }
+  };
 
   const fetchApplications = async () => {
     try {

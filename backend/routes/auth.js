@@ -102,7 +102,13 @@ router.get("/auth/profile", verifyFirebaseToken, async (req, res) => {
       role: user.role,
       college_name: user.college_name,
       dob: user.dob,
-      language: user.language
+      language: user.language,
+      is_verified: user.is_verified,
+      verification_status: user.verification_status,
+      annual_income: user.annual_income,
+      marks_percentage: user.marks_percentage,
+      marks_10th: user.marks_10th,
+      marks_12th: user.marks_12th
     };
 
     res.json({ success: true, user: userData });

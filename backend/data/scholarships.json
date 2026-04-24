@@ -1355,5 +1355,250 @@
     "eligibility_criteria": "Admission through SOA entrance test or JEE/NEET rank. Merit-based fee waiver.",
     "provider": "SOA University",
     "amount": "25%-100% tuition waiver"
+  },
+  {
+    "id": "sch_056",
+    "name": "MahaDBT Rajarshi Chhatrapati Shahu Maharaj Shikshan Shulkh Shishyavrutti Yojna (EBC)",
+    "description": "Provides 50% tuition fee and exam fee reimbursement to EBC students from Maharashtra studying in professional/non-professional courses.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "Minority"
+    ],
+    "income_limit": 800000,
+    "min_percentage": 50,
+    "deadline": "2026-11-30",
+    "min_age": 17,
+    "max_age": 30,
+    "benefits": "50% Tuition Fees and 50% Exam Fees reimbursement",
+    "link": "https://mahadbt.maharashtra.gov.in/",
+    "eligibility_criteria": "Must be a domicile of Maharashtra. Admitted through CAP round. Family income ≤ ₹8 lakh/year.",
+    "provider": "Government of Maharashtra",
+    "amount": "50% of Tuition & Exam Fees"
+  },
+  {
+    "id": "sch_057",
+    "name": "SSP Post Matric Scholarship for SC/ST (Karnataka)",
+    "description": "Financial assistance to SC/ST students of Karnataka pursuing post-matriculation courses.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST"
+    ],
+    "income_limit": 250000,
+    "min_percentage": 50,
+    "deadline": "2026-12-31",
+    "min_age": 17,
+    "max_age": 35,
+    "benefits": "Full tuition fee reimbursement + maintenance allowance",
+    "link": "https://ssp.postmatric.karnataka.gov.in/",
+    "eligibility_criteria": "Domicile of Karnataka. Belonging to SC/ST. Family income ≤ ₹2.5 lakh/year.",
+    "provider": "Government of Karnataka",
+    "amount": "Full Tuition Fee"
+  },
+  {
+    "id": "sch_058",
+    "name": "OASIS Post Matric Scholarship to SC/ST/OBC (West Bengal)",
+    "description": "Scholarship scheme by Backward Classes Welfare Department, West Bengal for SC/ST/OBC students.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST",
+      "OBC"
+    ],
+    "income_limit": 250000,
+    "min_percentage": 50,
+    "deadline": "2026-10-31",
+    "min_age": 17,
+    "max_age": 35,
+    "benefits": "Maintenance allowance and tuition fee coverage",
+    "link": "https://oasis.gov.in/",
+    "eligibility_criteria": "Domicile of West Bengal. Family income ≤ ₹2.5 lakh for SC/ST and ₹1 lakh for OBC.",
+    "provider": "Government of West Bengal",
+    "amount": "Varies by course"
+  },
+  {
+    "id": "sch_059",
+    "name": "UP Scholarship - Post Matric (Uttar Pradesh)",
+    "description": "Financial support for students of Uttar Pradesh pursuing Post-Matric (Class 11, 12, UG, PG) courses.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
+    "income_limit": 200000,
+    "min_percentage": 50,
+    "deadline": "2026-11-15",
+    "min_age": 17,
+    "max_age": 35,
+    "benefits": "Tuition fee reimbursement and monthly allowance",
+    "link": "https://scholarship.up.gov.in/",
+    "eligibility_criteria": "Domicile of UP. Family income ≤ ₹2 lakh (₹2.5 lakh for SC/ST).",
+    "provider": "Government of Uttar Pradesh",
+    "amount": "Full Tuition Fee Reimbursement"
+  },
+  {
+    "id": "sch_060",
+    "name": "Mukhya Mantri Medhavi Vidyarthi Yojna (MMVY) (Madhya Pradesh)",
+    "description": "Scheme for meritorious students of MP to get their full UG tuition fees paid by the government.",
+    "type": "MERIT",
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
+    "income_limit": 600000,
+    "min_percentage": 75,
+    "deadline": "2026-12-15",
+    "min_age": 17,
+    "max_age": 25,
+    "benefits": "Full tuition fee waiver for Engineering, Medical, and other UG courses",
+    "link": "http://scholarshipportal.mp.nic.in/",
+    "eligibility_criteria": "Domicile of MP. Min 75% in 12th (MP Board) or 85% (CBSE/ICSE). Family income ≤ ₹6 lakh/year.",
+    "provider": "Government of Madhya Pradesh",
+    "amount": "Full Tuition Fee"
+  },
+  {
+    "id": "sch_061",
+    "name": "Digital Gujarat Post Matric Scholarship",
+    "description": "Various post-matric scholarship schemes for SC, ST, OBC, and EBC students of Gujarat.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "OBC",
+      "SC/ST"
+    ],
+    "income_limit": 250000,
+    "min_percentage": 50,
+    "deadline": "2026-11-30",
+    "min_age": 17,
+    "max_age": 35,
+    "benefits": "Tuition fee and exam fee coverage + maintenance allowance",
+    "link": "https://www.digitalgujarat.gov.in/",
+    "eligibility_criteria": "Domicile of Gujarat. Income limit varies by category (₹2.5L for SC/ST, ₹1L for OBC).",
+    "provider": "Government of Gujarat",
+    "amount": "Varies by scheme"
+  },
+  {
+    "id": "sch_062",
+    "name": "Suvarna Jubilee Merit Scholarship (Kerala)",
+    "description": "Merit scholarship for BPL students in Kerala pursuing UG or PG courses in Govt/Aided colleges.",
+    "type": "MERIT",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
+    "income_limit": 100000,
+    "min_percentage": 50,
+    "deadline": "2026-10-31",
+    "min_age": 17,
+    "max_age": 30,
+    "benefits": "₹10,000 per annum",
+    "link": "http://dcescholarship.kerala.gov.in/",
+    "eligibility_criteria": "First year UG/PG student in Govt/Aided college. Must belong to BPL family.",
+    "provider": "Government of Kerala",
+    "amount": "₹10,000/year"
+  },
+  {
+    "id": "sch_063",
+    "name": "Bihar Student Credit Card Scheme",
+    "description": "Educational loan up to ₹4 Lakh at nominal interest rates for 12th pass students from Bihar.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate"
+    ],
+    "communities": [
+      "General",
+      "OBC",
+      "SC/ST",
+      "Minority"
+    ],
+    "income_limit": 1000000,
+    "min_percentage": 50,
+    "deadline": "2026-12-31",
+    "min_age": 17,
+    "max_age": 25,
+    "benefits": "Loan up to ₹4 Lakh for higher education (1% interest for girls, transgender, divyang)",
+    "link": "https://www.7nishchay-yuvaupmission.bihar.gov.in/",
+    "eligibility_criteria": "Domicile of Bihar. Passed 12th from a school in Bihar. Age ≤ 25 years.",
+    "provider": "Government of Bihar",
+    "amount": "Up to ₹4 Lakh (Loan)"
+  },
+  {
+    "id": "sch_064",
+    "name": "Dr. Ambedkar Post Matric Scholarship for SC (Punjab)",
+    "description": "Scholarship for SC students of Punjab pursuing post-matriculation courses.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "SC/ST"
+    ],
+    "income_limit": 250000,
+    "min_percentage": 50,
+    "deadline": "2026-11-30",
+    "min_age": 17,
+    "max_age": 35,
+    "benefits": "Full tuition fee reimbursement + maintenance allowance",
+    "link": "https://scholarships.punjab.gov.in/",
+    "eligibility_criteria": "Domicile of Punjab. Belong to SC category. Family income ≤ ₹2.5 lakh/year.",
+    "provider": "Government of Punjab",
+    "amount": "Full Tuition Fee + Allowance"
+  },
+  {
+    "id": "sch_065",
+    "name": "PRERANA Post Matric Scholarship (Odisha)",
+    "description": "Financial assistance for SC/ST/OBC/SEBC/EBC students in Odisha pursuing post-matric studies.",
+    "type": "NEED",
+    "education_qualifications": [
+      "Undergraduate",
+      "Postgraduate"
+    ],
+    "communities": [
+      "OBC",
+      "SC/ST"
+    ],
+    "income_limit": 250000,
+    "min_percentage": 50,
+    "deadline": "2026-12-15",
+    "min_age": 17,
+    "max_age": 35,
+    "benefits": "Tuition fee waiver and maintenance allowance",
+    "link": "https://scholarship.odisha.gov.in/",
+    "eligibility_criteria": "Domicile of Odisha. Income limit varies by category (₹2.5L for SC/ST, ₹1.5L for OBC).",
+    "provider": "Government of Odisha",
+    "amount": "Varies by course"
   }
 ]

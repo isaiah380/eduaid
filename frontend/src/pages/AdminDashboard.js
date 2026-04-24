@@ -489,22 +489,28 @@ function AdminDashboard({ user, onLogout }) {
                 <div className="p-6 space-y-8">
                   {/* Profile Section */}
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-5">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                       <div>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
-                        <p className="font-bold text-slate-800">{selectedStudent.student.full_name}</p>
+                        <p className="font-bold text-slate-800 text-sm">{selectedStudent.student.full_name}</p>
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Email</p>
-                        <p className="font-medium text-slate-600">{selectedStudent.student.email}</p>
+                        <p className="font-medium text-slate-600 text-xs truncate">{selectedStudent.student.email}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Income (Verified)</p>
-                        <p className="font-bold text-emerald-700">{selectedStudent.student.annual_income ? `₹${selectedStudent.student.annual_income.toLocaleString()}` : 'Not extracted'}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Income</p>
+                        <p className="font-bold text-emerald-700 text-sm">{selectedStudent.student.annual_income ? `₹${selectedStudent.student.annual_income.toLocaleString()}` : '−'}</p>
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Marks (Verified)</p>
-                        <p className="font-bold text-blue-700">{selectedStudent.student.marks_percentage ? `${selectedStudent.student.marks_percentage}%` : 'Not extracted'}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">10th / 12th Marks</p>
+                        <p className="font-bold text-blue-700 text-sm">
+                          {selectedStudent.student.marks_10th ? `${selectedStudent.student.marks_10th}%` : '−'} / {selectedStudent.student.marks_12th ? `${selectedStudent.student.marks_12th}%` : '−'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Last Percentage</p>
+                        <p className="font-black text-indigo-700 text-sm">{selectedStudent.student.marks_percentage ? `${selectedStudent.student.marks_percentage}%` : '−'}</p>
                       </div>
                     </div>
                   </div>

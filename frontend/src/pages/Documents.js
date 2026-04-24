@@ -131,17 +131,17 @@ function Documents(props) {
 
   function extractPercent(ocr) {
     if (!ocr) return null;
-    var m = ocr.match(/Extracted Percentage:\s*([0-9.]+)%/i);
+    var m = ocr.match(/(?:Extracted Percentage|Percentage|Score):\s*([0-9.]+)/i);
     return m ? m[1] : null;
   }
 
   function extractField(ocr, field) {
     if (!ocr) return null;
-    if (field === 'aadhaar') { var m = ocr.match(/Aadhaar:\s*(XXXX-XXXX-\d{4})/i); return m ? m[1] : null; }
-    if (field === 'income') { var m = ocr.match(/Income:\s*([\S]+)/i); return m ? m[1] : null; }
+    if (field === 'aadhaar') { var m = ocr.match(/(?:Aadhaar|UID):\s*(XXXX-XXXX-\d{4})/i); return m ? m[1] : null; }
+    if (field === 'income') { var m = ocr.match(/(?:Income|Amount):\s*([\d,.]+)/i); return m ? m[1] : null; }
     if (field === 'category') { var m = ocr.match(/Category:\s*([A-Z]+)/i); return m ? m[1] : null; }
-    if (field === 'board') { var m = ocr.match(/Board:\s*([A-Z\s]+)/i); return m ? m[1].trim() : null; }
-    if (field === 'age') { var m = ocr.match(/Age:\s*(\d+)/i); return m ? m[1] : null; }
+    if (field === 'board') { var m = ocr.match(/(?:Board|Authority):\s*([A-Z\s,]+)/i); return m ? m[1].trim() : null; }
+    if (field === 'dob') { var m = ocr.match(/(?:DOB|Birth):\s*(\d{2}[\/-]\d{2}[\/-]\d{4})/i); return m ? m[1] : null; }
     return null;
   }
 
@@ -267,6 +267,7 @@ function Documents(props) {
                 {documents.map(function(doc) {
                   var pct = extractPercent(doc.ocr_result);
                   var aadhaar = extractField(doc.ocr_result, 'aadhaar');
+                  var dob = extractField(doc.ocr_result, 'dob');
                   var income = extractField(doc.ocr_result, 'income');
                   var category = extractField(doc.ocr_result, 'category');
                   var board = extractField(doc.ocr_result, 'board');
@@ -282,15 +283,20 @@ function Documents(props) {
                       
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h4 className="text-slate-800 font-bold text-sm flex items-center gap-1.5">
-                            {typeLabel || doc.document_type}
-                            {pct && doc.verification_status === 'verified' && (
-                              <span className="bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-black tracking-wider uppercase">
-                                {pct}%
-                              </span>
-                            )}
+                          <h4 className="text-slate-800 font-bold text-sm flex items-center gap-1.5 uppercase tracking-wide">
+                            {typeLabel || doc.document_type.replace(/_/g, ' ')}
                           </h4>
-                          <p className="text-slate-500 text-xs mt-1 truncate max-w-[220px] font-medium">{doc.file_name}</p>
+                          <p className="text-slate-500 text-[10px] mt-0.5 truncate max-w-[220px] font-medium italic">{doc.file_name}</p>
+                          
+                          {pct && doc.verification_status === 'verified' && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <div className="bg-blue-600 text-white px-3 py-1 rounded-lg shadow-sm flex items-center gap-1.5">
+                                <Award className="h-3 w-3" />
+                                <span className="text-xs font-black tracking-tight">{pct}%</span>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Extracted Score</span>
+                            </div>
+                          )}
                         </div>
                         {getStatusBadge(doc.verification_status)}
                       </div>
@@ -298,6 +304,7 @@ function Documents(props) {
                       {doc.verification_status === 'verified' && doc.ocr_result && (
                         <div className="flex flex-wrap gap-1.5 mb-2">
                           {aadhaar && <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full border border-violet-200">ID: {aadhaar}</span>}
+                          {dob && <span className="text-[10px] font-bold bg-pink-50 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">DOB: {dob}</span>}
                           {income && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">Income: {income}</span>}
                           {category && <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">Category: {category}</span>}
                           {board && <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">Board: {board}</span>}
