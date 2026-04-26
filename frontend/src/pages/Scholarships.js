@@ -429,9 +429,24 @@ function Scholarships({ user, onLogout }) {
                 <button onClick={() => setSelected(null)} className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-black text-sm tracking-widest uppercase hover:bg-slate-200 transition-colors flex items-center gap-2 border border-slate-200">
                   Close
                 </button>
-                <a href={selected.link || 'https://scholarships.gov.in'} target="_blank" rel="noopener noreferrer" className="px-6 py-2.5 bg-blue-600 text-white shadow-md rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-700 transition-colors flex items-center gap-2">
-                  Continue to Portal <ExternalLink className="h-4 w-4" />
-                </a>
+                {selected.link && (
+                  <a href={selected.link} target="_blank" rel="noopener noreferrer"
+                    className="px-5 py-2.5 bg-white border border-blue-300 text-blue-700 shadow-sm rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-50 transition-colors flex items-center gap-2">
+                    Official Portal <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+                {!appliedIds.has(selected._id || selected.id) && !isExpired(selected.deadline) && (
+                  <button
+                    onClick={() => { setSelected(null); navigate(`/apply/${selected._id || selected.id}`); }}
+                    className="px-6 py-2.5 bg-blue-600 text-white shadow-md rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    Apply for Scholarship <ExternalLink className="h-4 w-4" />
+                  </button>
+                )}
+                {appliedIds.has(selected._id || selected.id) && (
+                  <span className="px-6 py-2.5 bg-emerald-100 text-emerald-800 rounded-xl font-black text-sm tracking-widest uppercase flex items-center gap-2 border border-emerald-200">
+                    <CheckCircle className="h-4 w-4" /> Already Applied
+                  </span>
+                )}
               </div>
             </div>
           </div>

@@ -8,7 +8,7 @@ const router = express.Router();
 // ==================== APPLY FOR SCHOLARSHIP ====================
 router.post("/applications", (req, res) => {
   try {
-    const { user_id, scholarship_id, eligibility_check } = req.body;
+    const { user_id, scholarship_id, eligibility_check, personal_statement } = req.body;
     if (!user_id || !scholarship_id) {
       return res.status(400).json({ success: false, detail: "user_id and scholarship_id are required" });
     }
@@ -24,9 +24,9 @@ router.post("/applications", (req, res) => {
 
     const appId = uuidv4();
     db.prepare(`
-      INSERT INTO applications (id, user_id, scholarship_id, status, eligibility_check)
-      VALUES (?, ?, ?, 'applied', ?)
-    `).run(appId, user_id, scholarship_id, JSON.stringify(eligibility_check || {}));
+      INSERT INTO applications (id, user_id, scholarship_id, status, eligibility_check, personal_statement)
+      VALUES (?, ?, ?, 'applied', ?, ?)
+    `).run(appId, user_id, scholarship_id, JSON.stringify(eligibility_check || {}), personal_statement || '');
 
     res.json({ success: true, id: appId, message: "Application submitted" });
   } catch (err) {
@@ -172,8 +172,8 @@ router.get("/admin/stats", (req, res) => {
 router.get("/admin/applications", (req, res) => {
   try {
     const apps = db.prepare(`
-      SELECT a.id, a.status, a.applied_at,
-             s.name as scholarship_name, s.type as scholarship_type, s.provider,
+      SELECT a.id, a.status, a.applied_at, a.personal_statement,
+             s.name as scholarship_name, s.type as scholarship_type, s.provider, s.link as scholarship_link,
              u.full_name as student_name, u.email as student_email, u.dob, u.college_name, u.phone
       FROM applications a
       JOIN scholarships s ON a.scholarship_id = s.id

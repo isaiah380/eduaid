@@ -197,6 +197,14 @@ for (const sql of columns) {
     // Column might already exist
   }
 }
+
+// Add personal_statement to applications table (safe migration)
+try {
+  db.exec(`ALTER TABLE applications ADD COLUMN personal_statement TEXT DEFAULT ''`);
+  console.log('✅ Added personal_statement column to applications table');
+} catch (e) {
+  // Column already exists, ignore
+}
 console.log("✅ Database schema migration check complete");
 
 export default db;

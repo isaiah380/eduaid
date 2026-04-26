@@ -11,6 +11,7 @@ import LanguageSelect from './pages/LanguageSelect';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Scholarships from './pages/Scholarships';
+import ApplyScholarship from './pages/ApplyScholarship';
 import Benefits from './pages/Benefits';
 import Profile from './pages/Profile';
 import AdminLogin from './pages/AdminLogin';
@@ -138,6 +139,9 @@ function App() {
           } />
           <Route path="/scholarships" element={
             <ProtectedRoute user={user}><Scholarships user={user} onLogout={handleLogout} /></ProtectedRoute>
+          } />
+          <Route path="/apply/:scholarshipId" element={
+            <ProtectedRoute user={user}><ApplyScholarship user={user} onLogout={handleLogout} /></ProtectedRoute>
           } />
           <Route path="/benefits" element={
             <ProtectedRoute user={user}><Benefits user={user} onLogout={handleLogout} /></ProtectedRoute>
