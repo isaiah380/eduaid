@@ -14,6 +14,8 @@ router.get("/scholarships", (req, res) => {
       _id: s.id,
       education_qualifications: JSON.parse(s.education_qualifications || "[]"),
       communities: JSON.parse(s.communities || "[]"),
+      required_documents: JSON.parse(s.required_documents || "[]"),
+
     }));
     res.json({ success: true, scholarships, total: scholarships.length });
   } catch (err) {
@@ -53,8 +55,8 @@ router.post("/scholarships", (req, res) => {
     const id = uuidv4();
     db.prepare(`
       INSERT INTO scholarships (id, name, description, type, education_qualifications, communities,
-        income_limit, min_percentage, deadline, min_age, max_age, benefits, link, eligibility_criteria, provider, amount)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        income_limit, min_percentage, deadline, min_age, max_age, benefits, link, eligibility_criteria, provider, amount, required_documents)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id, s.name, s.description || "", s.type || "MERIT",
       JSON.stringify(s.education_qualifications || []),
@@ -64,7 +66,8 @@ router.post("/scholarships", (req, res) => {
       s.deadline || null, s.minAge || s.min_age || null,
       s.maxAge || s.max_age || null,
       s.benefits || "", s.link || "",
-      s.eligibility_criteria || "", s.provider || "", s.amount || ""
+      s.eligibility_criteria || "", s.provider || "", s.amount || "",
+      JSON.stringify(s.required_documents || [])
     );
 
     res.json({ success: true, id, message: "Scholarship added" });
@@ -150,6 +153,8 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
       _id: s.id,
       education_qualifications: JSON.parse(s.education_qualifications || "[]"),
       communities: JSON.parse(s.communities || "[]"),
+      required_documents: JSON.parse(s.required_documents || "[]"),
+
     }));
 
     // Check eligibility for each scholarship
@@ -200,6 +205,32 @@ router.get("/scholarships/eligible/:userId", (req, res) => {
         if (profile.age < sch.min_age) {
           eligible = false;
           reasons.push(`Minimum age is ${sch.min_age} (you are: ${profile.age})`);
+        }
+      }
+
+      // 5. Gender check
+      if (user && user.gender === 'Male' && sch.type === 'GIRL_CHILD') {
+        eligible = false;
+        reasons.push(`This scholarship is exclusively for female applicants.`);
+      }
+
+      // 6. Required Documents check
+      if (sch.required_documents && sch.required_documents.length > 0) {
+        const missing = sch.required_documents.filter(rd => !profile.verifiedDocTypes.includes(rd));
+        if (missing.length > 0) {
+          eligible = false;
+          const labels = {
+            'aadhar': 'Aadhaar',
+            'income_certificate': 'Income Certificate',
+            'caste_certificate': 'Caste Certificate',
+            '10th_marksheet': '10th Marksheet',
+            '12th_marksheet': '12th Marksheet',
+            'bank_passbook': 'Bank Passbook',
+            'college_id': 'College ID',
+            'domicile': 'Domicile Certificate'
+          };
+          const missingLabels = missing.map(m => labels[m] || m).join(', ');
+          reasons.push(`Missing verified documents: ${missingLabels}`);
         }
       }
 

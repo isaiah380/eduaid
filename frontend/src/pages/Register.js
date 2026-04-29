@@ -73,8 +73,8 @@ function Register({ onLogin }) {
 
       if (registerRes.data.success) {
         setSuccess('Registration successful! Redirecting...');
-        localStorage.setItem('token', idToken);
-        localStorage.setItem('role', registerRes.data.user.role);
+        sessionStorage.setItem('token', idToken);
+        sessionStorage.setItem('role', registerRes.data.user.role);
 
         setTimeout(() => {
           onLogin(registerRes.data.user);

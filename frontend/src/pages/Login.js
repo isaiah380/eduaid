@@ -60,8 +60,8 @@ function Login({ onLogin }) {
       if (response.data.success) {
         const userData = response.data.user;
         onLogin(userData);
-        localStorage.setItem('token', idToken);
-        localStorage.setItem('role', userData.role);
+        sessionStorage.setItem('token', idToken);
+        sessionStorage.setItem('role', userData.role);
         navigate(userData.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard');
       }
     } catch (err) {

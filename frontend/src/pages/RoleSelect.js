@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Users, Shield, ArrowRight, Globe } from 'lucide-react';
+import { GraduationCap, Users, Shield, ArrowRight, Globe, FileCheck } from 'lucide-react';
 import { t } from '@/lib/i18n';
 
 const LANGUAGES = [
@@ -60,7 +60,7 @@ function RoleSelect() {
         </div>
 
         {/* Role Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Student Card */}
           <button
             onClick={() => navigate('/login')}
@@ -99,6 +99,27 @@ function RoleSelect() {
             </p>
             <div className="flex items-center text-emerald-600 font-bold group-hover:text-emerald-700">
               {t('continue_admin', lang)}
+              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
+
+          {/* Clerk Card */}
+          <button
+            onClick={() => navigate('/clerk/login')}
+            className="group bg-white border border-slate-200 rounded-2xl p-8 text-left
+                       hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1
+                       transition-all duration-300 cursor-pointer w-full relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-1 h-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="bg-indigo-50 p-4 rounded-2xl w-fit mb-6 text-indigo-600">
+              <FileCheck className="h-8 w-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800 mb-3">Clerk</h3>
+            <p className="text-slate-500 leading-relaxed mb-6 font-medium">
+              Verify student documents, review applications, and manage initial scholarship processing.
+            </p>
+            <div className="flex items-center text-indigo-600 font-bold group-hover:text-indigo-700">
+              Continue as Clerk
               <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>

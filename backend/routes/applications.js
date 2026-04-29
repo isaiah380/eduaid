@@ -102,7 +102,7 @@ router.get("/applications/admin/students/:id/details", (req, res) => {
   try {
     const studentId = req.params.id;
     // Get student profile
-    const student = db.prepare("SELECT id, full_name, email, phone, college_name, dob, created_at, role, language, annual_income, marks_percentage FROM users WHERE id = ?").get(studentId);
+    const student = db.prepare("SELECT id, full_name, email, phone, college_name, dob, created_at, role, language, annual_income, marks_percentage, verification_status, is_verified FROM users WHERE id = ?").get(studentId);
     if (!student) {
       return res.status(404).json({ success: false, detail: "Student not found" });
     }
@@ -172,9 +172,10 @@ router.get("/admin/stats", (req, res) => {
 router.get("/admin/applications", (req, res) => {
   try {
     const apps = db.prepare(`
-      SELECT a.id, a.status, a.applied_at, a.personal_statement,
+      SELECT a.id, a.user_id, a.status, a.applied_at, a.personal_statement,
              s.name as scholarship_name, s.type as scholarship_type, s.provider, s.link as scholarship_link,
-             u.full_name as student_name, u.email as student_email, u.dob, u.college_name, u.phone
+             u.full_name as student_name, u.email as student_email, u.dob, u.college_name, u.phone,
+             u.verification_status, u.is_verified
       FROM applications a
       JOIN scholarships s ON a.scholarship_id = s.id
       JOIN users u ON a.user_id = u.id
@@ -234,6 +235,18 @@ router.post("/admin/applications/:appId/status", async (req, res) => {
       WHERE a.id = ?
     `).get(req.params.appId);
 
+    // Check if student profile is verified before allowing approval
+    if (status === 'approved') {
+
+      const user = db.prepare("SELECT verification_status FROM users WHERE id = ?").get(app.user_id);
+      if (!user || user.verification_status !== 'verified') {
+        return res.status(400).json({ 
+          success: false, 
+          detail: "Cannot approve application because student profile is not verified or has been rejected." 
+        });
+      }
+    }
+
     db.prepare("UPDATE applications SET status = ? WHERE id = ?").run(status, req.params.appId);
 
     // Send push notification to the student
@@ -244,6 +257,184 @@ router.post("/admin/applications/:appId/status", async (req, res) => {
     res.json({ success: true, message: "Status updated" });
   } catch (err) {
     res.status(500).json({ success: false, detail: "Failed to update status" });
+  }
+});
+
+// ==================== ADMIN: REPORT SCHOLARSHIPS ====================
+router.get("/admin/reports/scholarships", (req, res) => {
+  try {
+    const apps = db.prepare(`
+      SELECT a.id as application_id, a.status, s.type, s.amount, s.name, s.provider
+      FROM applications a
+      JOIN scholarships s ON a.scholarship_id = s.id
+    `).all();
+
+    const report = {};
+    let total_amount = 0;
+    let total_applications = 0;
+
+    apps.forEach(app => {
+      const type = app.type || 'Other';
+      if (!report[type]) {
+        report[type] = { count: 0, estimated_amount: 0, approved_count: 0 };
+      }
+      
+      report[type].count += 1;
+      total_applications += 1;
+      if (app.status === 'approved') {
+        report[type].approved_count += 1;
+      }
+
+      // Parse amount string to number roughly
+      let amtNum = 0;
+      if (app.amount) {
+        const str = app.amount.replace(/,/g, '');
+        const match = str.match(/\d+(\.\d+)?/);
+        if (match) {
+          amtNum = parseFloat(match[0]);
+          if (str.toLowerCase().includes('lakh')) {
+            amtNum *= 100000;
+          }
+        }
+      }
+      
+      report[type].estimated_amount += amtNum;
+      total_amount += amtNum;
+    });
+
+    res.json({ success: true, report, summary: { total_applications, total_amount } });
+  } catch (err) {
+    console.error("Report error:", err);
+    res.status(500).json({ success: false, detail: "Failed to generate report" });
+  }
+});
+
+// ==================== ADMIN: ADVANCED REPORTS ====================
+router.get("/admin/reports/advanced", (req, res) => {
+  try {
+    let approvedApps = db.prepare(`
+      SELECT a.id as application_id, a.applied_at, a.status, 
+             s.name as scholarship_name, s.type as scholarship_type, s.amount,
+             u.full_name as student_name, u.email as student_email
+      FROM applications a
+      JOIN scholarships s ON a.scholarship_id = s.id
+      JOIN users u ON a.user_id = u.id
+      WHERE a.status = 'approved'
+      ORDER BY a.applied_at DESC
+    `).all();
+
+    // Generate DUMMY DATA if no approved apps exist (to show the report in action)
+    if (approvedApps.length === 0) {
+      const dummyStudents = [
+        { name: "Rahul Sharma", email: "rahul@example.com" },
+        { name: "Priya Patel", email: "priya@example.com" },
+        { name: "Amit Kumar", email: "amit@example.com" },
+        { name: "Sneha Reddy", email: "sneha@example.com" },
+        { name: "Vikram Singh", email: "vikram@example.com" }
+      ];
+      const dummyScholarships = [
+        { name: "Tata Merit Scholarship", type: "MERIT", amount: "₹50,000" },
+        { name: "National Means Merit", type: "NEED", amount: "₹12,000" },
+        { name: "HDFC Badhte Kadam", type: "NEED", amount: "₹1.5 Lakh" },
+        { name: "Kotak Kanya Scholarship", type: "GIRL_CHILD", amount: "₹1 Lakh" },
+        { name: "Minority Excellence Award", type: "MINORITY", amount: "₹25,000" }
+      ];
+
+      for (let i = 0; i < 20; i++) {
+        const student = dummyStudents[i % dummyStudents.length];
+        const scholarship = dummyScholarships[i % dummyScholarships.length];
+        const years = [2022, 2023, 2024, 2025];
+        const year = years[Math.floor(i / (20/years.length))];
+        
+        approvedApps.push({
+          application_id: `dummy-${i}`,
+          applied_at: `${year}-05-15T10:00:00.000Z`,
+          status: 'approved',
+          scholarship_name: scholarship.name,
+          scholarship_type: scholarship.type,
+          amount: scholarship.amount,
+          student_name: student.name,
+          student_email: student.email
+        });
+      }
+    }
+
+    let total_amount_disbursed = 0;
+    const individual_money_received = [];
+    const yearly_map = {};
+    const category_map = {};
+
+    approvedApps.forEach(app => {
+      // Parse amount
+      let amtNum = 0;
+      if (app.amount) {
+        const str = app.amount.replace(/,/g, '');
+        const match = str.match(/\d+(\.\d+)?/);
+        if (match) {
+          amtNum = parseFloat(match[0]);
+          if (str.toLowerCase().includes('lakh')) {
+            amtNum *= 100000;
+          }
+        }
+      }
+
+      total_amount_disbursed += amtNum;
+
+      // Individual receipt
+      individual_money_received.push({
+        student_name: app.student_name,
+        student_email: app.student_email,
+        scholarship_name: app.scholarship_name,
+        amount: amtNum,
+        applied_at: app.applied_at
+      });
+
+      // Yearly aggregation
+      const year = new Date(app.applied_at).getFullYear();
+      if (!yearly_map[year]) {
+        yearly_map[year] = { year, student_count: 0, total_amount: 0 };
+      }
+      yearly_map[year].student_count += 1;
+      yearly_map[year].total_amount += amtNum;
+
+      // Category aggregation
+      const category = app.scholarship_type || 'General';
+      if (!category_map[category]) {
+        category_map[category] = { category, students: [] };
+      }
+      category_map[category].students.push({
+        name: app.student_name,
+        scholarship: app.scholarship_name,
+        amount: amtNum
+      });
+    });
+
+    res.json({
+      success: true,
+      total_amount_disbursed,
+      individual_money_received,
+      yearly_report: Object.values(yearly_map).sort((a, b) => b.year - a.year),
+      category_wise_list: Object.values(category_map)
+    });
+  } catch (err) {
+    console.error("Advanced report error:", err);
+    res.status(500).json({ success: false, detail: "Failed to generate advanced report" });
+  }
+});
+
+
+// ==================== DELETE APPLICATION ====================
+router.delete("/applications/:id", (req, res) => {
+  try {
+    const appId = req.params.id;
+    const result = db.prepare("DELETE FROM applications WHERE id = ?").run(appId);
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, detail: "Application not found" });
+    }
+    res.json({ success: true, message: "Application deleted successfully" });
+  } catch (err) {
+    console.error("Delete app error:", err);
+    res.status(500).json({ success: false, detail: "Failed to delete application" });
   }
 });
 

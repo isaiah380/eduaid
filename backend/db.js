@@ -25,6 +25,7 @@ db.exec(`
     college_name TEXT DEFAULT '',
     last_exam_date TEXT,
     role TEXT DEFAULT 'USER',
+    gender TEXT DEFAULT 'Male',
     language TEXT DEFAULT 'en',
     fcm_token TEXT,
     created_at TEXT DEFAULT (datetime('now'))
@@ -57,8 +58,10 @@ db.exec(`
     eligibility_criteria TEXT DEFAULT '',
     provider TEXT DEFAULT '',
     amount TEXT DEFAULT '',
+    required_documents TEXT DEFAULT '[]',
     created_at TEXT DEFAULT (datetime('now'))
   );
+
 
   CREATE TABLE IF NOT EXISTS benefits (
     id TEXT PRIMARY KEY,
@@ -138,6 +141,15 @@ export async function initDB() {
     console.log('✅ Seeded admin user (email: admin@test.com / password: admin123)');
   }
 
+  // Seed clerk
+  const clerkExists = db.prepare('SELECT COUNT(*) as count FROM users WHERE role = ?').get('CLERK');
+  if (clerkExists.count === 0) {
+    const hashedPassword = bcrypt.default.hashSync('clerk123', 10);
+    db.prepare(`INSERT INTO users (id, full_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, ?)`)
+      .run(uuidv4(), 'Clerk User', 'clerk@test.com', '8888888888', hashedPassword, 'CLERK');
+    console.log('✅ Seeded clerk user (email: clerk@test.com / password: clerk123)');
+  }
+
   // Seed scholarships
   const schCount = db.prepare('SELECT COUNT(*) as count FROM scholarships').get();
   if (schCount.count === 0) {
@@ -187,7 +199,8 @@ const columns = [
   "ALTER TABLE users ADD COLUMN marks_percentage REAL",
   "ALTER TABLE users ADD COLUMN marks_10th REAL",
   "ALTER TABLE users ADD COLUMN marks_12th REAL",
-  "ALTER TABLE users ADD COLUMN verification_requested INTEGER DEFAULT 0"
+  "ALTER TABLE users ADD COLUMN verification_requested INTEGER DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN gender TEXT DEFAULT 'Male'"
 ];
 
 for (const sql of columns) {

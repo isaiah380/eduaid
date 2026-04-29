@@ -12,10 +12,14 @@ import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Scholarships from './pages/Scholarships';
 import ApplyScholarship from './pages/ApplyScholarship';
+import MockPortal from './pages/MockPortal';
 import Benefits from './pages/Benefits';
 import Profile from './pages/Profile';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import ClerkLogin from './pages/ClerkLogin';
+import ClerkDashboard from './pages/ClerkDashboard';
+import MyApplications from './pages/MyApplications';
 import Chatbot from './components/Chatbot';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
@@ -46,29 +50,29 @@ function App() {
           if (response.data.success) {
             const userData = response.data.user;
             setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            localStorage.setItem('token', idToken);
-            localStorage.setItem('role', userData.role);
+            sessionStorage.setItem('user', JSON.stringify(userData));
+            sessionStorage.setItem('token', idToken);
+            sessionStorage.setItem('role', userData.role);
           }
         } catch (err) {
           // User exists in Firebase but not in SQLite (needs to register profile)
           console.log('Firebase user found, no profile yet — may need to register');
           // Check if there's a saved user from localStorage (for registration flow)
-          const savedUser = localStorage.getItem('user');
+          const savedUser = sessionStorage.getItem('user');
           if (savedUser) {
             try {
               setUser(JSON.parse(savedUser));
             } catch (e) {
-              localStorage.removeItem('user');
+              sessionStorage.removeItem('user');
             }
           }
         }
       } else {
         // User signed out
         setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('role');
         localStorage.removeItem('language');
       }
       setLoading(false);
@@ -79,7 +83,7 @@ function App() {
 
   const handleLogin = (userData) => {
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('user', JSON.stringify(userData));
   };
 
   const handleLogout = async () => {
@@ -89,9 +93,9 @@ function App() {
       console.error('Sign out error:', e);
     }
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('role');
+    sessionStorage.removeItem('token');
     localStorage.removeItem('language');
   };
 
@@ -113,16 +117,19 @@ function App() {
         <Routes>
           {/* Public Routes — redirect to dashboard if already logged in */}
           <Route path="/" element={
-            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/dashboard" replace />) : <RoleSelect />
+            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : user.role === 'CLERK' ? <Navigate to="/clerk/dashboard" replace /> : <Navigate to="/dashboard" replace />) : <RoleSelect />
           } />
           <Route path="/login" element={
-            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/dashboard" replace />) : <Login onLogin={handleLogin} />
+            user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : user.role === 'CLERK' ? <Navigate to="/clerk/dashboard" replace /> : <Navigate to="/dashboard" replace />) : <Login onLogin={handleLogin} />
           } />
           <Route path="/register" element={
             user ? <Navigate to="/dashboard" replace /> : <Register onLogin={handleLogin} />
           } />
           <Route path="/admin/login" element={
             user ? (user.role === 'ADMIN' ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/" replace />) : <AdminLogin onLogin={handleLogin} />
+          } />
+          <Route path="/clerk/login" element={
+            user ? (user.role === 'CLERK' ? <Navigate to="/clerk/dashboard" replace /> : <Navigate to="/" replace />) : <ClerkLogin onLogin={handleLogin} />
           } />
 
           {/* Post-Login Language Selection */}
@@ -143,16 +150,27 @@ function App() {
           <Route path="/apply/:scholarshipId" element={
             <ProtectedRoute user={user}><ApplyScholarship user={user} onLogout={handleLogout} /></ProtectedRoute>
           } />
+          <Route path="/mock-portal/:scholarshipId" element={
+            <ProtectedRoute user={user}><MockPortal user={user} onLogout={handleLogout} /></ProtectedRoute>
+          } />
           <Route path="/benefits" element={
             <ProtectedRoute user={user}><Benefits user={user} onLogout={handleLogout} /></ProtectedRoute>
           } />
           <Route path="/profile" element={
             <ProtectedRoute user={user}><Profile user={user} onLogout={handleLogout} /></ProtectedRoute>
           } />
+          <Route path="/my-applications" element={
+            <ProtectedRoute user={user}><MyApplications user={user} onLogout={handleLogout} /></ProtectedRoute>
+          } />
 
           {/* Admin Routes */}
           <Route path="/admin/dashboard" element={
             <ProtectedRoute user={user}><AdminDashboard user={user} onLogout={handleLogout} /></ProtectedRoute>
+          } />
+
+          {/* Clerk Routes */}
+          <Route path="/clerk/dashboard" element={
+            <ProtectedRoute user={user}><ClerkDashboard user={user} onLogout={handleLogout} /></ProtectedRoute>
           } />
 
           {/* Catch-all */}

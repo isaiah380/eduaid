@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getMessaging, isSupported } from 'firebase/messaging';
 
 // Your web app's Firebase configuration
@@ -17,6 +17,7 @@ const app = initializeApp(firebaseConfig);
 
 // Firebase Auth
 export const auth = getAuth(app);
+setPersistence(auth, browserSessionPersistence).catch(console.error);
 
 // Firebase Cloud Messaging (only on supported browsers)
 export let messaging = null;

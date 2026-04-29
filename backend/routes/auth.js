@@ -205,6 +205,11 @@ router.post("/auth/admin/verify-student/:id", (req, res) => {
     db.prepare("UPDATE users SET verification_status = ?, is_verified = ?, verification_requested = 0 WHERE id = ?")
       .run(status, status === 'verified' ? 1 : 0, studentId);
 
+    // If student is rejected, automatically reject all their applications
+    if (status === 'rejected') {
+      db.prepare("UPDATE applications SET status = 'rejected' WHERE user_id = ?").run(studentId);
+    }
+
     res.json({ success: true, message: `Student profile ${status}` });
   } catch (err) {
     console.error("Verify student error:", err);

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Shield, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock, CheckCircle, XCircle, Trash2, Plus, X, Download, Globe, ClipboardList, Bell, PieChart, TrendingUp, IndianRupee } from "lucide-react";
+import { FileCheck, FileText, Search, Users, ExternalLink, RefreshCw, Layers, Award, Eye, Clock, CheckCircle, XCircle, Trash2, Plus, X, Download, Globe, ClipboardList, Bell, PieChart } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 const API = `${BACKEND_URL}/api`;
 
-function AdminDashboard({ user, onLogout }) {
+function ClerkDashboard({ user, onLogout }) {
   const navigate = useNavigate();
   const [stats, setStats] = useState({ total_scholarships: 0, total_students: 0, total_applications: 0, total_views: 0 });
   const [scholarships, setScholarships] = useState([]);
@@ -15,9 +15,8 @@ function AdminDashboard({ user, onLogout }) {
   const [applications, setApplications] = useState([]);
   const [pendingDocs, setPendingDocs] = useState([]);
   const [reportData, setReportData] = useState(null);
-  const [advancedReport, setAdvancedReport] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("verifications");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAppStatement, setSelectedAppStatement] = useState(null);
   const [selectedAppDocs, setSelectedAppDocs] = useState(null);
@@ -26,7 +25,7 @@ function AdminDashboard({ user, onLogout }) {
     setSelectedAppStatement(app);
     setSelectedAppDocs(null);
     try {
-      const res = await axios.get(`${API}/documents/${app.user_id || app.student_id}`);
+      const res = await axios.get(`${API}/documents/${app.user_id}`);
       if (res.data.success) {
         setSelectedAppDocs(res.data.documents);
       }
@@ -47,12 +46,11 @@ function AdminDashboard({ user, onLogout }) {
     type: 'MERIT',
     provider: '',
     amount: '',
-    deadline: '',
-    required_documents: []
+    deadline: ''
   });
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (user?.role !== "ADMIN") navigate("/"); else loadData(); }, [user, navigate]);
+  useEffect(() => { if (user?.role !== "CLERK") navigate("/"); else loadData(); }, [user, navigate]);
 
   const loadData = async () => {
     setLoading(true);
@@ -79,14 +77,11 @@ function AdminDashboard({ user, onLogout }) {
 
       const repRes = await axios.get(`${API}/admin/reports/scholarships`);
       if (repRes.data.success) setReportData(repRes.data);
-
-      const advRes = await axios.get(`${API}/admin/reports/advanced`);
-      if (advRes.data.success) setAdvancedReport(advRes.data);
     } catch (err) { console.error("Admin load error", err); }
   };
 
   useEffect(() => {
-    if (user?.role !== "ADMIN") return;
+    if (user?.role !== "CLERK") return;
     const interval = setInterval(() => {
       fetchLatest();
     }, 5000);
@@ -148,37 +143,21 @@ function AdminDashboard({ user, onLogout }) {
 
   const handleAddScholarship = async (e) => {
     e.preventDefault();
-    
-    // Strict Validation
-    const { name, description, link, type, provider, amount, deadline, required_documents } = newSch;
-    if (!name || !description || !link || !type || !provider || !amount || !deadline) {
-      alert("Please fill in ALL fields including Name, Overview, URL, Type, Provider, Amount, and Deadline.");
+    if (!newSch.name || !newSch.description || !newSch.link) {
+      alert("Please fill in Name, Overview and URL");
       return;
     }
-
-    // URL Validation
-    try {
-      new URL(link);
-    } catch (_) {
-      alert("Please provide a valid URL starting with http:// or https://");
-      return;
-    }
-
-    if (!required_documents || required_documents.length === 0) {
-      if (!window.confirm("No required documents specified. Are you sure you want to proceed?")) return;
-    }
-
     setAddingSch(true);
     try {
       const res = await axios.post(`${API}/scholarships`, newSch);
       if (res.data.success) {
         setIsAddModalOpen(false);
-        setNewSch({ name: '', description: '', link: '', type: 'MERIT', provider: '', amount: '', deadline: '', required_documents: [] });
+        setNewSch({ name: '', description: '', link: '', type: 'MERIT', provider: '', amount: '', deadline: '' });
         fetchLatest();
         alert("Scholarship added successfully!");
       }
     } catch (err) {
-      alert("Failed to add scholarship: " + (err.response?.data?.detail || err.message));
+      alert("Failed to add scholarship");
     }
     setAddingSch(false);
   };
@@ -204,12 +183,12 @@ function AdminDashboard({ user, onLogout }) {
       <header className="bg-white border-b border-slate-200 mt-2 sticky top-2 z-40 shadow-sm relative">
         <div className="max-w-[1400px] mx-auto px-4 py-4 flex justify-between items-center relative z-10">
           <div className="flex items-center gap-3">
-            <div className="bg-emerald-600 p-2.5 rounded-xl shadow-md">
-              <Shield className="h-6 w-6 text-white" />
+            <div className="bg-indigo-600 p-2.5 rounded-xl shadow-md">
+              <FileCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold text-slate-800 tracking-tight leading-tight">Admin Dashboard</h1>
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Secure College Administration</p>
+              <h1 className="text-xl font-extrabold text-slate-800 tracking-tight leading-tight">Clerk Dashboard</h1>
+              <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Verification & Processing</p>
             </div>
           </div>
           <button onClick={() => { onLogout(); navigate("/"); }} className="text-slate-600 font-bold hover:bg-slate-100 flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border border-slate-200 shadow-sm">
@@ -222,13 +201,9 @@ function AdminDashboard({ user, onLogout }) {
         {/* Navigation Tabs */}
         <div className="flex flex-wrap gap-2 mb-8 bg-white p-1.5 rounded-xl w-fit border border-slate-200 shadow-sm">
           {[
-            { id: "overview", label: "Overview", icon: Layers },
+            { id: "verifications", label: "Verifications", icon: CheckCircle },
             { id: "applications", label: "Applications", icon: ClipboardList },
             { id: "students", label: "Students", icon: Users },
-            { id: "scholarships", label: "Scholarships", icon: Award },
-            { id: "reports", label: "Reports", icon: PieChart },
-            { id: "detailed_reports", label: "Detailed Reports", icon: TrendingUp },
-            { id: "views", label: "Activity", icon: Eye },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm tracking-wide transition-all ${
@@ -334,6 +309,28 @@ function AdminDashboard({ user, onLogout }) {
                                   >
                                     <ExternalLink className="h-4 w-4" />
                                   </a>
+                                )}
+                                {a.status === 'applied' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleUpdateAppStatus(a.id, 'approved')}
+                                      disabled={a.verification_status !== 'verified'}
+                                      className={`${
+                                        a.verification_status === 'verified' 
+                                        ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+                                        : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                                      } px-3 py-1.5 rounded-lg text-xs font-black transition-all shadow-sm flex items-center gap-1`}
+                                      title={a.verification_status !== 'verified' ? "Student profile must be verified first" : "Approve application"}
+                                    >
+                                      <CheckCircle className="h-3 w-3" /> Approve
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateAppStatus(a.id, 'rejected')}
+                                      className="bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-lg text-xs font-black border border-red-200 transition-all flex items-center gap-1"
+                                    >
+                                      <XCircle className="h-3 w-3" /> Reject
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -676,115 +673,6 @@ function AdminDashboard({ user, onLogout }) {
                 </div>
               </div>
             )}
-
-            {/* Detailed Reports Tab */}
-            {activeTab === "detailed_reports" && advancedReport && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* Summary Section */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <IndianRupee className="h-32 w-32 text-emerald-600" />
-                  </div>
-                  <div className="relative z-10">
-                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">Total Scholarship Funds Disbursed</p>
-                    <h2 className="text-5xl font-black text-emerald-600">₹{advancedReport.total_amount_disbursed.toLocaleString()}</h2>
-                    <p className="text-slate-400 text-sm mt-4 flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4" /> Across {advancedReport.individual_money_received.length} approved applications
-                    </p>
-                  </div>
-                </div>
-
-                {/* Yearly Report */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 bg-slate-50">
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-indigo-500" /> Yearly Scholarship Distribution
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                          <th className="p-4 pl-6">Year</th>
-                          <th className="p-4">Number of Students</th>
-                          <th className="p-4 text-right pr-6">Total Amount Received</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {advancedReport.yearly_report.map(row => (
-                          <tr key={row.year} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td className="p-4 pl-6 font-black text-slate-800">{row.year}</td>
-                            <td className="p-4 text-slate-600 font-bold">{row.student_count} Students</td>
-                            <td className="p-4 text-right pr-6 font-black text-emerald-600 text-lg">₹{row.total_amount.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Individual Money Received */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 bg-slate-50">
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                      <Users className="h-5 w-5 text-emerald-500" /> Individual Student Funds
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto max-h-[500px]">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm">
-                        <tr className="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase tracking-widest">
-                          <th className="p-4 pl-6">Student Name</th>
-                          <th className="p-4">Email</th>
-                          <th className="p-4">Scholarship Name</th>
-                          <th className="p-4 text-right pr-6">Amount Received</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {advancedReport.individual_money_received.map((rec, idx) => (
-                          <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                            <td className="p-4 pl-6 font-bold text-slate-800 text-sm">{rec.student_name}</td>
-                            <td className="p-4 text-slate-500 text-xs font-medium">{rec.student_email}</td>
-                            <td className="p-4 text-indigo-700 font-bold text-sm">{rec.scholarship_name}</td>
-                            <td className="p-4 text-right pr-6 font-black text-emerald-700">₹{rec.amount.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Category-wise List */}
-                <div className="space-y-6">
-                  <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 px-2">
-                    <Layers className="h-6 w-6 text-indigo-600" /> Category-wise Student Lists
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {advancedReport.category_wise_list.map(cat => (
-                      <div key={cat.category} className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-                        <div className="p-4 border-b border-slate-100 bg-indigo-50 flex justify-between items-center">
-                          <span className="font-black text-indigo-700 text-sm uppercase tracking-widest">{cat.category}</span>
-                          <span className="bg-white text-indigo-700 text-xs font-black px-2 py-0.5 rounded-full shadow-sm">{cat.students.length} Students</span>
-                        </div>
-                        <div className="p-4 flex-1">
-                          <div className="space-y-3">
-                            {cat.students.map((s, si) => (
-                              <div key={si} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <div>
-                                  <p className="font-bold text-slate-800 text-xs">{s.name}</p>
-                                  <p className="text-[10px] text-slate-500 truncate max-w-[150px]">{s.scholarship}</p>
-                                </div>
-                                <p className="font-black text-emerald-600 text-sm">₹{s.amount.toLocaleString()}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </main>
@@ -899,13 +787,13 @@ function AdminDashboard({ user, onLogout }) {
                                      }`}
                                      title={selectedStudent.student.verification_status !== 'verified' ? "Verify profile first" : "Approve"}
                                    >
-                                      <CheckCircle className="h-3 w-3" /> Approve
+                                     <CheckCircle className="h-3 w-3" /> Approve
                                    </button>
                                    <button 
                                      onClick={() => handleUpdateAppStatus(app.id, 'rejected')}
                                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-700 border border-red-100 hover:bg-red-100 transition-all"
                                    >
-                                      <XCircle className="h-3 w-3" /> Reject
+                                     <XCircle className="h-3 w-3" /> Reject
                                    </button>
                                  </div>
                                )}
@@ -916,11 +804,21 @@ function AdminDashboard({ user, onLogout }) {
                     </div>
                   </div>
 
-                  {/* Verification Action Bar (Removed for Admin, visible in Clerk) */}
+                  {/* Verification Action Bar (Visible only to Admin in Modal) */}
                   <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                      <div>
-                       <p className="text-sm font-bold text-slate-800 tracking-tight">Student Status</p>
-                       <p className="text-xs text-slate-500 font-medium tracking-wide">Verification is handled by the Clerk.</p>
+                       <p className="text-sm font-bold text-slate-800 tracking-tight">Final Verification Decision</p>
+                       <p className="text-xs text-slate-500 font-medium tracking-wide">Review the entire student report above before making a decision.</p>
+                     </div>
+                     <div className="flex gap-3 w-full sm:w-auto">
+                       <button onClick={() => handleVerifyStudent(selectedStudent.student.id, 'rejected')} 
+                         className="flex-1 sm:flex-none bg-red-50 text-red-700 hover:bg-red-100 px-6 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest border border-red-200 transition-all">
+                         Reject Report
+                       </button>
+                       <button onClick={() => handleVerifyStudent(selectedStudent.student.id, 'verified')} 
+                         className="flex-1 sm:flex-none bg-emerald-600 text-white hover:bg-emerald-700 px-8 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all">
+                         Approve Student
+                       </button>
                      </div>
                   </div>
                 </div>
@@ -971,69 +869,32 @@ function AdminDashboard({ user, onLogout }) {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Scholarship Category</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Type</label>
                   <select value={newSch.type} onChange={(e) => setNewSch({...newSch, type: e.target.value})}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium">
-                    <option value="MERIT">Merit Based (Academic Excellence)</option>
-                    <option value="NEED">Need Based (Economic Support)</option>
-                    <option value="GIRL_CHILD">Girl Child Specific</option>
-                    <option value="MINORITY">Minority / Caste Specific</option>
-                    <option value="TECHNICAL">Technical / Engineering</option>
-                    <option value="ARTS">Arts & Humanities</option>
-                    <option value="SPORTS">Sports Excellence</option>
+                    <option value="MERIT">Merit Based</option>
+                    <option value="NEED">Need Based</option>
+                    <option value="GIRL_CHILD">Girls Only</option>
+                    <option value="MINORITY">Minority Specific</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Provider Organization</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Provider</label>
                   <input type="text" value={newSch.provider} onChange={(e) => setNewSch({...newSch, provider: e.target.value})}
-                    placeholder="e.g. Tata Trusts / HDFC Bank"
+                    placeholder="e.g. Tata Trusts"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Required Documents from Student</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  {[
-                    { id: 'aadhar', label: 'Aadhaar Card' },
-                    { id: 'income_certificate', label: 'Income Certificate' },
-                    { id: 'caste_certificate', label: 'Caste Certificate' },
-                    { id: '10th_marksheet', label: '10th Marksheet' },
-                    { id: '12th_marksheet', label: '12th Marksheet' },
-                    { id: 'bank_passbook', label: 'Bank Passbook' },
-                    { id: 'college_id', label: 'College ID' },
-                    { id: 'domicile', label: 'Domicile Cert' }
-                  ].map(doc => (
-                    <label key={doc.id} className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="checkbox" 
-                        checked={newSch.required_documents?.includes(doc.id)}
-                        onChange={(e) => {
-                          const docs = [...(newSch.required_documents || [])];
-                          if (e.target.checked) docs.push(doc.id);
-                          else {
-                            const idx = docs.indexOf(doc.id);
-                            if (idx > -1) docs.splice(idx, 1);
-                          }
-                          setNewSch({...newSch, required_documents: docs});
-                        }}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                      />
-                      <span className="text-xs text-slate-600 font-bold group-hover:text-indigo-600 transition-colors">{doc.label}</span>
-                    </label>
-                  ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Scholarship Amount / Reward</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Amount / Benefit</label>
                   <input type="text" value={newSch.amount} onChange={(e) => setNewSch({...newSch, amount: e.target.value})}
                     placeholder="e.g. ₹50,000 / year"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Application Deadline</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Deadline</label>
                   <input type="date" value={newSch.deadline} onChange={(e) => setNewSch({...newSch, deadline: e.target.value})}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 font-medium" />
                 </div>
@@ -1112,10 +973,16 @@ function AdminDashboard({ user, onLogout }) {
               </div>
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => { setSelectedAppStatement(null); setSelectedAppDocs(null); }}
-                  className="flex-1 bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2.5 rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2"
+                  onClick={() => { setSelectedAppStatement(null); setSelectedAppDocs(null); handleUpdateAppStatus(selectedAppStatement.id, 'rejected'); }}
+                  className="flex-1 bg-red-50 text-red-700 hover:bg-red-100 px-4 py-2.5 rounded-xl text-sm font-black border border-red-200 transition-all flex items-center justify-center gap-2"
                 >
-                  Close
+                  <XCircle className="h-4 w-4" /> Reject
+                </button>
+                <button
+                  onClick={() => { setSelectedAppStatement(null); setSelectedAppDocs(null); handleUpdateAppStatus(selectedAppStatement.id, 'approved'); }}
+                  className="flex-1 bg-emerald-600 text-white hover:bg-emerald-700 px-4 py-2.5 rounded-xl text-sm font-black shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="h-4 w-4" /> Approve
                 </button>
               </div>
             </div>
@@ -1126,4 +993,4 @@ function AdminDashboard({ user, onLogout }) {
   );
 }
 
-export default AdminDashboard;
+export default ClerkDashboard;

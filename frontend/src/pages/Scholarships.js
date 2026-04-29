@@ -406,6 +406,35 @@ function Scholarships({ user, onLogout }) {
                   </div>
                 )}
 
+                {selected.required_documents && selected.required_documents.length > 0 && (
+                  <div>
+                    <h4 className="text-slate-800 font-bold mb-2 uppercase tracking-wide text-xs flex items-center gap-2"><Shield className="h-4 w-4 text-indigo-500" /> Required Verified Documents</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selected.required_documents.map(rd => {
+                        const labels = {
+                          'aadhar': 'Aadhaar Card',
+                          'income_certificate': 'Income Certificate',
+                          'caste_certificate': 'Caste Certificate',
+                          '10th_marksheet': '10th Marksheet',
+                          '12th_marksheet': '12th Marksheet',
+                          'bank_passbook': 'Bank Passbook',
+                          'college_id': 'College ID',
+                          'domicile': 'Domicile Certificate'
+                        };
+                        const isUploaded = userProfile?.verifiedDocTypes?.includes(rd);
+                        return (
+                          <span key={rd} className={`text-[10px] font-bold px-2 py-1 rounded-md border flex items-center gap-1 ${
+                            isUploaded ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-200'
+                          }`}>
+                            {isUploaded ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                            {labels[rd] || rd}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-2 pt-2">
                   {selected.education_qualifications && (() => {
                     let arr = [];
@@ -437,8 +466,21 @@ function Scholarships({ user, onLogout }) {
                 )}
                 {!appliedIds.has(selected._id || selected.id) && !isExpired(selected.deadline) && (
                   <button
-                    onClick={() => { setSelected(null); navigate(`/apply/${selected._id || selected.id}`); }}
-                    className="px-6 py-2.5 bg-blue-600 text-white shadow-md rounded-xl font-black text-sm tracking-widest uppercase hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    onClick={() => { 
+                      if (elig && !elig.eligible) {
+                        alert("You are not eligible for this scholarship: " + elig.reasons.join(", "));
+                        return;
+                      }
+                      setSelected(null); 
+                      navigate(`/mock-portal/${selected._id || selected.id}`); 
+                    }}
+                    className={`px-6 py-2.5 shadow-md rounded-xl font-black text-sm tracking-widest uppercase transition-colors flex items-center gap-2 ${
+                      elig && !elig.eligible 
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed" 
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
+                    title={elig && !elig.eligible ? elig.reasons.join(", ") : "Apply now"}
+                  >
                     Apply for Scholarship <ExternalLink className="h-4 w-4" />
                   </button>
                 )}

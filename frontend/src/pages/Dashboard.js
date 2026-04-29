@@ -181,9 +181,10 @@ function Dashboard({ user, onLogout }) {
         </div>
 
         {/* Quick Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           {[
             { title: t('browse_scholarships', lang), desc: t('explore_scholarships_desc', lang), icon: BookOpen, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100', hover: 'hover:border-blue-300 hover:shadow-blue-500/10', path: '/scholarships' },
+            { title: 'My Applications', desc: 'Track your application status and history', icon: Award, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-100', hover: 'hover:border-orange-300 hover:shadow-orange-500/10', path: '/my-applications' },
             { title: t('explore_benefits', lang), desc: t('student_offers_desc', lang), icon: Award, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100', hover: 'hover:border-indigo-300 hover:shadow-indigo-500/10', path: '/benefits' },
             { title: t('upload_documents', lang), desc: t('upload_verify_desc', lang), icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', hover: 'hover:border-emerald-300 hover:shadow-emerald-500/10', path: '/documents' },
             { title: t('view_profile', lang), desc: t('track_eligibility_desc', lang), icon: User, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', hover: 'hover:border-amber-300 hover:shadow-amber-500/10', path: '/profile' },
