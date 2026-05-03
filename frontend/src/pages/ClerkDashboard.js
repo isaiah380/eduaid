@@ -187,8 +187,8 @@ function ClerkDashboard({ user, onLogout }) {
               <FileCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-extrabold text-slate-800 tracking-tight leading-tight">Clerk Dashboard</h1>
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Verification & Processing</p>
+              <h1 className="text-xl font-extrabold text-slate-800 tracking-tight leading-tight">Scholarship Portal</h1>
+              <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Scholarship Verification & Processing</p>
             </div>
           </div>
           <button onClick={() => { onLogout(); navigate("/"); }} className="text-slate-600 font-bold hover:bg-slate-100 flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border border-slate-200 shadow-sm">
@@ -312,6 +312,7 @@ function ClerkDashboard({ user, onLogout }) {
                                 )}
                                 {a.status === 'applied' && (
                                   <>
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mr-1">→ FCRIT</span>
                                     <button
                                       onClick={() => handleUpdateAppStatus(a.id, 'approved')}
                                       disabled={a.verification_status !== 'verified'}
@@ -320,7 +321,7 @@ function ClerkDashboard({ user, onLogout }) {
                                         ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
                                         : "bg-slate-200 text-slate-400 cursor-not-allowed"
                                       } px-3 py-1.5 rounded-lg text-xs font-black transition-all shadow-sm flex items-center gap-1`}
-                                      title={a.verification_status !== 'verified' ? "Student profile must be verified first" : "Approve application"}
+                                      title={a.verification_status !== 'verified' ? "Student profile must be verified first" : "Approve & forward to FCRIT Admin"}
                                     >
                                       <CheckCircle className="h-3 w-3" /> Approve
                                     </button>

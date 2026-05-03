@@ -217,4 +217,68 @@ router.post("/auth/admin/verify-student/:id", (req, res) => {
   }
 });
 
+// ==================== ADMIN: REGISTER NEW USER ====================
+router.post("/auth/admin/register-user", async (req, res) => {
+  try {
+    const { full_name, email, phone, password, college_name, role } = req.body;
+
+    if (!full_name || !email || !phone || !password) {
+      return res.status(400).json({ success: false, detail: "Full name, email, phone, and password are required" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, detail: "Password must be at least 6 characters" });
+    }
+
+    // Check if user already exists in SQLite
+    const existingUser = db.prepare("SELECT id FROM users WHERE email = ? OR phone = ?").get(email, phone);
+    if (existingUser) {
+      return res.status(400).json({ success: false, detail: "A user with this email or phone already exists" });
+    }
+
+    // Create user in Firebase Auth
+    let firebaseUser;
+    try {
+      firebaseUser = await admin.auth().createUser({
+        email: email,
+        password: password,
+        displayName: full_name
+      });
+    } catch (firebaseErr) {
+      if (firebaseErr.code === 'auth/email-already-exists') {
+        return res.status(400).json({ success: false, detail: "This email is already registered in Firebase" });
+      }
+      console.error("Firebase create user error:", firebaseErr);
+      return res.status(500).json({ success: false, detail: "Failed to create Firebase account: " + firebaseErr.message });
+    }
+
+    // Create user in SQLite
+    const userId = uuidv4();
+    const userRole = role || 'USER';
+    const collegeName = college_name || 'FCRIT';
+
+    db.prepare(`
+      INSERT INTO users (id, firebase_uid, full_name, email, phone, password, college_name, role)
+      VALUES (?, ?, ?, ?, ?, '', ?, ?)
+    `).run(userId, firebaseUser.uid, full_name, email, phone, collegeName, userRole);
+
+    res.json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        id: userId,
+        full_name,
+        email,
+        phone,
+        college_name: collegeName,
+        role: userRole,
+        password_hint: password // Return so admin can share with the user
+      }
+    });
+  } catch (err) {
+    console.error("Admin register user error:", err);
+    res.status(500).json({ success: false, detail: "Failed to register user: " + err.message });
+  }
+});
+
 export default router;

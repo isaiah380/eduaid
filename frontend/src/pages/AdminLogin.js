@@ -111,6 +111,9 @@ function AdminLogin({ onLogin }) {
                 <div className="text-sm text-center text-slate-500 font-medium mt-4">
                   Not an admin? <Link to="/login" className="text-emerald-600 hover:text-emerald-800 font-bold tracking-wide">Student Login</Link>
                 </div>
+                <div className="text-sm text-center text-slate-500 font-medium">
+                  Need an account? <Link to="/admin/register" className="text-emerald-600 hover:text-emerald-800 font-bold tracking-wide">Register new user</Link>
+                </div>
               </CardFooter>
             </form>
           </Card>

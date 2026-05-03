@@ -9,6 +9,7 @@ import scholarshipRoutes from "./routes/scholarships.js";
 import benefitRoutes from "./routes/benefits.js";
 import documentRoutes from "./routes/documents.js";
 import applicationRoutes from "./routes/applications.js";
+import chatbotRoutes from "./routes/chatbot.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,7 @@ app.use("/api", scholarshipRoutes);
 app.use("/api", benefitRoutes);
 app.use("/api", documentRoutes);
 app.use("/api", applicationRoutes);
+app.use("/api", chatbotRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {

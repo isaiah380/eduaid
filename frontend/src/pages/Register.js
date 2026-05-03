@@ -78,7 +78,7 @@ function Register({ onLogin }) {
 
         setTimeout(() => {
           onLogin(registerRes.data.user);
-          navigate('/select-language');
+          navigate('/dashboard');
         }, 1500);
       }
     } catch (err) {

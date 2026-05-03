@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Cpu, ChevronDown, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-import { t } from '@/lib/i18n';
+
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 const API = `${BACKEND_URL}/api`;
@@ -12,7 +12,7 @@ const Chatbot = () => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
-    const lang = localStorage.getItem('language') || 'en';
+
 
     useEffect(() => {
         if (isOpen && messages.length === 0) {
@@ -34,7 +34,7 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            const res = await axios.post(`${API}/chatbot/ask`, { query: text, lang });
+            const res = await axios.post(`${API}/chatbot/ask`, { query: text });
             if (res.data.success) {
                 setMessages([...currentMsgs, { text: res.data.response, isUser: false }]);
             }

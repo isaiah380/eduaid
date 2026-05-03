@@ -218,6 +218,14 @@ try {
 } catch (e) {
   // Column already exists, ignore
 }
+
+// Add target_college column to applications table (for clerk→admin routing)
+try {
+  db.exec(`ALTER TABLE applications ADD COLUMN target_college TEXT DEFAULT 'FCRIT'`);
+  console.log('✅ Added target_college column to applications table');
+} catch (e) {
+  // Column already exists, ignore
+}
 console.log("✅ Database schema migration check complete");
 
 export default db;

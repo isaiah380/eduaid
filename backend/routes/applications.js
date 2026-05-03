@@ -172,7 +172,7 @@ router.get("/admin/stats", (req, res) => {
 router.get("/admin/applications", (req, res) => {
   try {
     const apps = db.prepare(`
-      SELECT a.id, a.user_id, a.status, a.applied_at, a.personal_statement,
+      SELECT a.id, a.user_id, a.status, a.applied_at, a.personal_statement, a.target_college,
              s.name as scholarship_name, s.type as scholarship_type, s.provider, s.link as scholarship_link,
              u.full_name as student_name, u.email as student_email, u.dob, u.college_name, u.phone,
              u.verification_status, u.is_verified
@@ -248,6 +248,11 @@ router.post("/admin/applications/:appId/status", async (req, res) => {
     }
 
     db.prepare("UPDATE applications SET status = ? WHERE id = ?").run(status, req.params.appId);
+
+    // Set target_college when approved (default to FCRIT)
+    if (status === 'approved') {
+      db.prepare("UPDATE applications SET target_college = 'FCRIT' WHERE id = ?").run(req.params.appId);
+    }
 
     // Send push notification to the student
     if (app) {

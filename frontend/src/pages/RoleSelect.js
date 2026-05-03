@@ -1,26 +1,8 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Users, Shield, ArrowRight, Globe, FileCheck } from 'lucide-react';
-import { t } from '@/lib/i18n';
-
-const LANGUAGES = [
-  { code: 'en', name: 'English' },
-  { code: 'hi', name: 'हिन्दी' },
-  { code: 'bn', name: 'বাংলা' },
-  { code: 'te', name: 'తెలుగు' },
-  { code: 'mr', name: 'मराठी' },
-  { code: 'ta', name: 'தமிழ்' }
-];
+import { GraduationCap, Users, Shield, ArrowRight, FileCheck } from 'lucide-react';
 
 function RoleSelect() {
   const navigate = useNavigate();
-  const [lang, setLang] = useState(localStorage.getItem('language') || 'en');
-
-  const handleLanguageChange = (e) => {
-    const newLang = e.target.value;
-    setLang(newLang);
-    localStorage.setItem('language', newLang);
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative overflow-hidden">
@@ -29,20 +11,6 @@ function RoleSelect() {
         <div className="flex-1 bg-orange-500"></div>
         <div className="flex-1 bg-white"></div>
         <div className="flex-1 bg-green-600"></div>
-      </div>
-
-      {/* Language Switcher */}
-      <div className="absolute top-6 right-6 z-50 flex items-center bg-white border border-slate-200 rounded-xl shadow-sm px-3 py-1.5 hover:border-blue-300 transition-colors">
-        <Globe className="h-4 w-4 text-slate-500 mr-2" />
-        <select 
-          value={lang} 
-          onChange={handleLanguageChange}
-          className="bg-transparent text-sm font-bold text-slate-700 focus:outline-none cursor-pointer appearance-none pr-2"
-        >
-          {LANGUAGES.map(l => (
-            <option key={l.code} value={l.code}>{l.name}</option>
-          ))}
-        </select>
       </div>
 
       <div className="relative z-10 w-full max-w-2xl py-8 mt-12">
@@ -54,9 +22,9 @@ function RoleSelect() {
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight mb-3">EduAid</h1>
-          <p className="text-slate-600 font-medium mb-1 uppercase tracking-widest text-sm">{t('your_education_portal', lang)}</p>
+          <p className="text-slate-600 font-medium mb-1 uppercase tracking-widest text-sm">Your Education Portal</p>
           <div className="h-1 w-16 bg-blue-500 mx-auto rounded-full mb-4 mt-4"></div>
-          <p className="text-slate-500 text-lg">{t('select_role_continue', lang)}</p>
+          <p className="text-slate-500 text-lg">Select your role to continue</p>
         </div>
 
         {/* Role Cards */}
@@ -72,12 +40,12 @@ function RoleSelect() {
             <div className="bg-blue-50 p-4 rounded-2xl w-fit mb-6 text-blue-600">
               <Users className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-3">{t('student', lang)}</h3>
+            <h3 className="text-2xl font-bold text-slate-800 mb-3">Student</h3>
             <p className="text-slate-500 leading-relaxed mb-6 font-medium">
               Browse available scholarships, apply securely, and track your application status.
             </p>
             <div className="flex items-center text-blue-600 font-bold group-hover:text-blue-700">
-              {t('continue_student', lang)}
+              Continue as Student
               <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
@@ -93,17 +61,17 @@ function RoleSelect() {
             <div className="bg-emerald-50 p-4 rounded-2xl w-fit mb-6 text-emerald-600">
               <Shield className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-3">{t('admin', lang)}</h3>
+            <h3 className="text-2xl font-bold text-slate-800 mb-3">Admin</h3>
             <p className="text-slate-500 leading-relaxed mb-6 font-medium">
               Manage scholarship listings, review student applications, and track college metrics.
             </p>
             <div className="flex items-center text-emerald-600 font-bold group-hover:text-emerald-700">
-              {t('continue_admin', lang)}
+              Continue as Admin
               <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>
 
-          {/* Clerk Card */}
+          {/* Scholarship Portal Card */}
           <button
             onClick={() => navigate('/clerk/login')}
             className="group bg-white border border-slate-200 rounded-2xl p-8 text-left
@@ -114,12 +82,12 @@ function RoleSelect() {
             <div className="bg-indigo-50 p-4 rounded-2xl w-fit mb-6 text-indigo-600">
               <FileCheck className="h-8 w-8" />
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-3">Clerk</h3>
+            <h3 className="text-2xl font-bold text-slate-800 mb-3">Scholarship Portal</h3>
             <p className="text-slate-500 leading-relaxed mb-6 font-medium">
-              Verify student documents, review applications, and manage initial scholarship processing.
+              Verify student documents, review applications, and manage scholarship processing.
             </p>
             <div className="flex items-center text-indigo-600 font-bold group-hover:text-indigo-700">
-              Continue as Clerk
+              Continue to Portal
               <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </div>
           </button>

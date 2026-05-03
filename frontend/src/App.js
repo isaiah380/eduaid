@@ -7,7 +7,7 @@ import axios from 'axios';
 import RoleSelect from './pages/RoleSelect';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import LanguageSelect from './pages/LanguageSelect';
+
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
 import Scholarships from './pages/Scholarships';
@@ -16,6 +16,7 @@ import MockPortal from './pages/MockPortal';
 import Benefits from './pages/Benefits';
 import Profile from './pages/Profile';
 import AdminLogin from './pages/AdminLogin';
+import AdminRegister from './pages/AdminRegister';
 import AdminDashboard from './pages/AdminDashboard';
 import ClerkLogin from './pages/ClerkLogin';
 import ClerkDashboard from './pages/ClerkDashboard';
@@ -73,7 +74,6 @@ function App() {
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('role');
-        localStorage.removeItem('language');
       }
       setLoading(false);
     });
@@ -96,7 +96,6 @@ function App() {
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('role');
     sessionStorage.removeItem('token');
-    localStorage.removeItem('language');
   };
 
   // Show loading while checking Firebase auth state
@@ -131,11 +130,11 @@ function App() {
           <Route path="/clerk/login" element={
             user ? (user.role === 'CLERK' ? <Navigate to="/clerk/dashboard" replace /> : <Navigate to="/" replace />) : <ClerkLogin onLogin={handleLogin} />
           } />
-
-          {/* Post-Login Language Selection */}
-          <Route path="/select-language" element={
-            <ProtectedRoute user={user}><LanguageSelect /></ProtectedRoute>
+          <Route path="/admin/register" element={
+            <AdminRegister />
           } />
+
+
 
           {/* Student Routes */}
           <Route path="/dashboard" element={

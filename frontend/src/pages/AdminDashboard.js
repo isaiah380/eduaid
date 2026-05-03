@@ -51,6 +51,8 @@ function AdminDashboard({ user, onLogout }) {
     required_documents: []
   });
 
+
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (user?.role !== "ADMIN") navigate("/"); else loadData(); }, [user, navigate]);
 
@@ -209,7 +211,7 @@ function AdminDashboard({ user, onLogout }) {
             </div>
             <div>
               <h1 className="text-xl font-extrabold text-slate-800 tracking-tight leading-tight">Admin Dashboard</h1>
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Secure College Administration</p>
+              <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">FCRIT College Administration</p>
             </div>
           </div>
           <button onClick={() => { onLogout(); navigate("/"); }} className="text-slate-600 font-bold hover:bg-slate-100 flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors border border-slate-200 shadow-sm">
@@ -282,6 +284,7 @@ function AdminDashboard({ user, onLogout }) {
                           <th className="p-4">Scholarship</th>
                           <th className="p-4">Status</th>
                           <th className="p-4">Applied At</th>
+                          <th className="p-4">Forwarded To</th>
                           <th className="p-4 text-right pr-6">Actions</th>
                         </tr>
                       </thead>
@@ -315,6 +318,13 @@ function AdminDashboard({ user, onLogout }) {
                             </td>
                             <td className="p-4 text-slate-500 text-xs font-bold">
                               {new Date(a.applied_at).toLocaleDateString()}
+                            </td>
+                            <td className="p-4">
+                              {a.target_college ? (
+                                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-emerald-200">{a.target_college}</span>
+                              ) : (
+                                <span className="text-slate-400 text-xs">—</span>
+                              )}
                             </td>
                             <td className="p-4 text-right pr-6">
                               <div className="flex items-center justify-end gap-2">

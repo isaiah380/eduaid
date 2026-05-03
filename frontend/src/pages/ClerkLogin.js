@@ -86,7 +86,7 @@ function ClerkLogin({ onLogin }) {
                   <FileCheck className="h-8 w-8 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-3xl font-extrabold text-slate-800 tracking-tight">Clerk Portal</CardTitle>
+              <CardTitle className="text-3xl font-extrabold text-slate-800 tracking-tight">Scholarship Portal</CardTitle>
               <CardDescription className="text-slate-500 font-bold tracking-widest uppercase">Verification & Processing</CardDescription>
             </CardHeader>
             <form onSubmit={handleLogin} className="pt-6">
